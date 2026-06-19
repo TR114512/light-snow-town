@@ -799,9 +799,9 @@
 </head>
 <body>
 
-<!-- 背景音乐：黎明前的黑暗 - 张韶涵/王晰 -->
+<!-- 背景音乐：黎明前的黑暗 - 张韶涵/王晰 (QQ音乐主源) -->
 <audio id="bgMusic" loop preload="auto"
-    src="https://meting.mikus.ink/api?server=netease&type=url&id=1427664616">
+    src="https://meting.mikus.ink/api?server=tencent&type=url&id=001phxeF3VzpcG">
 </audio>
 
 <div id="loadingScreen" class="loading-screen">
@@ -1347,11 +1347,11 @@
     bgMusic.addEventListener('canplay', tryPlay);
     bgMusic.addEventListener('loadeddata', tryPlay);
 
-    // 主源失败 -> 切QQ音乐源
+    // 主源失败 -> 切网易云源
     bgMusic.addEventListener('error', function() {
         if (fallbackTried) return;
         fallbackTried = true;
-        bgMusic.src = 'https://meting.mikus.ink/api?server=tencent&type=url&id=001phxeF3VzpcG';
+        bgMusic.src = 'https://meting.mikus.ink/api?server=netease&type=url&id=1427664616';
         bgMusic.load();
     });
 
