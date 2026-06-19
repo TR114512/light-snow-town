@@ -799,10 +799,8 @@
 </head>
 <body>
 
-<!-- 背景音乐：黎明前的黑暗 - 张韶涵/王晰 -->
-<audio id="bgMusic" loop preload="auto">
-    <source src="https://music.163.com/song/media/outer/url?id=1427664616.mp3" type="audio/mpeg">
-</audio>
+<!-- 背景音乐：黎明前的黑暗 - 张韶涵/王晰 (通过API动态获取HTTPS直链) -->
+<audio id="bgMusic" loop preload="auto" crossorigin="anonymous"></audio>
 
 <div id="loadingScreen" class="loading-screen">
     <div class="linear-loader-container">
@@ -1323,48 +1321,93 @@
     })();
 </script>
 
-<!-- 背景音乐自动播放逻辑 -->
+<!-- 背景音乐：黎明前的黑暗 - 动态获取HTTPS外链+自动播放 -->
 <script>
 (function() {
     var bgMusic = document.getElementById('bgMusic');
     if (!bgMusic) return;
-    bgMusic.volume = 0.35;
 
+    bgMusic.volume = 0.35;
+    bgMusic.loop = true;
     var musicStarted = false;
+    var audioReady = false;
+
+    // 多重备用音频源 (全部HTTPS)
+    var fallbackUrls = [
+        'https://www.yueting.net/server/1/187648092.mp3',
+        'https://www.yueting.net/server/1/433573.mp3'
+    ];
+
+    function setAudioSource(url) {
+        bgMusic.src = url;
+        bgMusic.load();
+        audioReady = true;
+    }
 
     function tryPlay() {
-        if (musicStarted) return;
+        if (!audioReady || musicStarted) return;
         var playPromise = bgMusic.play();
         if (playPromise !== undefined) {
             playPromise.then(function() {
                 musicStarted = true;
-            }).catch(function() {
-                // 浏览器阻止了自动播放，等待用户交互
+                console.log('音乐已开始播放');
+            }).catch(function(e) {
+                console.log('自动播放被浏览器拦截,等待用户交互');
             });
         }
     }
 
-    // 页面加载后尝试播放
-    window.addEventListener('load', function() {
-        setTimeout(tryPlay, 800);
+    // 方法1: 通过API动态获取最新的HTTPS外链
+    function fetchMusicUrl() {
+        var apiUrl = 'https://api.injahow.cn/meting/?type=url&id=1427664616&server=netease';
+        fetch(apiUrl)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.url) {
+                    console.log('获取到最新音频链接');
+                    setAudioSource(data.url);
+                    setTimeout(tryPlay, 500);
+                }
+            })
+            .catch(function() {
+                console.log('API获取失败,使用备用链接');
+                setAudioSource(fallbackUrls[0]);
+            });
+    }
+
+    // 音频加载完成后尝试播放
+    bgMusic.addEventListener('loadeddata', function() {
+        audioReady = true;
+        tryPlay();
     });
 
-    // 如果自动播放被阻止，在用户首次交互时开始播放
+    // 当前源播放失败,切换备用源
+    bgMusic.addEventListener('error', function() {
+        if (fallbackUrls.length > 0) {
+            var nextUrl = fallbackUrls.shift();
+            console.log('切换备用音频源');
+            setAudioSource(nextUrl);
+        }
+    });
+
+    // 页面加载后获取音频源
+    fetchMusicUrl();
+
+    // 如果自动播放被阻止,在用户首次交互时播放
     function startOnInteraction() {
         if (musicStarted) return;
+        if (!audioReady) return;
         tryPlay();
         if (musicStarted) {
             document.removeEventListener('click', startOnInteraction);
             document.removeEventListener('touchstart', startOnInteraction);
             document.removeEventListener('keydown', startOnInteraction);
-            document.removeEventListener('scroll', startOnInteraction);
         }
     }
 
     document.addEventListener('click', startOnInteraction);
     document.addEventListener('touchstart', startOnInteraction);
     document.addEventListener('keydown', startOnInteraction);
-    document.addEventListener('scroll', startOnInteraction, { once: true });
 })();
 </script>
 </body>
