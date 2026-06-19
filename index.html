@@ -799,6 +799,11 @@
 </head>
 <body>
 
+<!-- 背景音乐：黎明前的黑暗 - 张韶涵/王晰 -->
+<audio id="bgMusic" loop preload="auto">
+    <source src="https://music.163.com/song/media/outer/url?id=1427664616.mp3" type="audio/mpeg">
+</audio>
+
 <div id="loadingScreen" class="loading-screen">
     <div class="linear-loader-container">
         <div class="linear-progress-bar"><div class="linear-progress-fill"></div></div>
@@ -1316,6 +1321,51 @@
         });
         resizeCanvas(); startAnimation(); applyAllStyles();
     })();
+</script>
+
+<!-- 背景音乐自动播放逻辑 -->
+<script>
+(function() {
+    var bgMusic = document.getElementById('bgMusic');
+    if (!bgMusic) return;
+    bgMusic.volume = 0.35;
+
+    var musicStarted = false;
+
+    function tryPlay() {
+        if (musicStarted) return;
+        var playPromise = bgMusic.play();
+        if (playPromise !== undefined) {
+            playPromise.then(function() {
+                musicStarted = true;
+            }).catch(function() {
+                // 浏览器阻止了自动播放，等待用户交互
+            });
+        }
+    }
+
+    // 页面加载后尝试播放
+    window.addEventListener('load', function() {
+        setTimeout(tryPlay, 800);
+    });
+
+    // 如果自动播放被阻止，在用户首次交互时开始播放
+    function startOnInteraction() {
+        if (musicStarted) return;
+        tryPlay();
+        if (musicStarted) {
+            document.removeEventListener('click', startOnInteraction);
+            document.removeEventListener('touchstart', startOnInteraction);
+            document.removeEventListener('keydown', startOnInteraction);
+            document.removeEventListener('scroll', startOnInteraction);
+        }
+    }
+
+    document.addEventListener('click', startOnInteraction);
+    document.addEventListener('touchstart', startOnInteraction);
+    document.addEventListener('keydown', startOnInteraction);
+    document.addEventListener('scroll', startOnInteraction, { once: true });
+})();
 </script>
 </body>
 </html>
