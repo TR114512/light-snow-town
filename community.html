@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>灯雪镇 · 玩家社区</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif}
+body{background:linear-gradient(135deg,#0a0f1e 0%,#121a2f 50%,#0d1525 100%);min-height:100vh;color:#e0e0e0}
+.navbar{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,15,30,0.95);backdrop-filter:blur(10px);border-bottom:1px solid rgba(100,140,255,0.15);padding:12px 24px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:1.3rem;font-weight:700;background:linear-gradient(135deg,#7aa2f7,#a9b1d6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
+.nav-logo:hover{opacity:0.8}
+.nav-right{display:flex;align-items:center;gap:16px}
+.btn{background:linear-gradient(135deg,#3b5fcc,#5a7de0);border:none;color:#fff;padding:8px 20px;border-radius:20px;cursor:pointer;font-size:0.9rem;transition:all 0.3s;text-decoration:none;display:inline-block}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(59,95,204,0.4)}
+.btn-outline{background:transparent;border:1px solid rgba(100,140,255,0.4);color:#7aa2f7}
+.btn-outline:hover{border-color:#7aa2f7}
+.btn-danger{background:linear-gradient(135deg,#c0392b,#e74c3c)}
+.btn-sm{padding:5px 14px;font-size:0.8rem}
+.avatar-sm{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(100,140,255,0.3);cursor:pointer}
+.user-info{display:flex;align-items:center;gap:10px}
+.container{max-width:800px;margin:0 auto;padding:80px 16px 40px}
+
+/* Post Form */
+.post-form{background:rgba(15,20,40,0.9);border:1px solid rgba(100,140,255,0.15);border-radius:16px;padding:20px;margin-bottom:24px}
+.post-form textarea{width:100%;background:rgba(10,15,30,0.8);border:1px solid rgba(100,140,255,0.2);border-radius:12px;color:#d0d0d0;padding:14px;font-size:0.95rem;resize:vertical;min-height:100px;outline:none;transition:border-color 0.3s}
+.post-form textarea:focus{border-color:#5a7de0}
+.char-count{text-align:right;font-size:0.8rem;color:#8899aa;margin-top:4px}
+.char-count.warn{color:#e74c3c}
+.media-upload{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap}
+.media-upload label{cursor:pointer;background:rgba(59,95,204,0.15);border:1px dashed rgba(100,140,255,0.3);border-radius:10px;padding:10px 16px;font-size:0.85rem;color:#7aa2f7;transition:all 0.3s;display:flex;align-items:center;gap:6px}
+.media-upload label:hover{background:rgba(59,95,204,0.25);border-color:#5a7de0}
+.media-preview{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.media-preview img,.media-preview video{max-width:200px;max-height:150px;border-radius:8px;object-fit:cover}
+.media-preview .preview-item{position:relative;display:inline-block}
+.media-preview .remove-media{position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:22px;text-align:center}
+.city-tag{display:inline-flex;align-items:center;gap:4px;background:rgba(100,140,255,0.1);padding:4px 12px;border-radius:14px;font-size:0.8rem;color:#8899cc;margin-bottom:12px}
+.form-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.location-btn{background:transparent;border:1px solid rgba(100,140,255,0.2);color:#7aa2f7;padding:6px 14px;border-radius:14px;cursor:pointer;font-size:0.85rem;transition:all 0.3s}
+.location-btn:hover{background:rgba(100,140,255,0.1)}
+
+/* Post Card */
+.post-card{background:rgba(15,20,40,0.9);border:1px solid rgba(100,140,255,0.12);border-radius:16px;padding:18px;margin-bottom:16px;transition:all 0.3s}
+.post-card:hover{border-color:rgba(100,140,255,0.3)}
+.post-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.post-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid rgba(100,140,255,0.2)}
+.post-author{font-weight:600;color:#c0caf5;font-size:0.95rem}
+.post-meta{font-size:0.78rem;color:#667799;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.post-content{color:#c0c8e0;line-height:1.7;margin-bottom:12px;word-break:break-word;white-space:pre-wrap}
+.post-media{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.post-media img{max-width:100%;max-height:400px;border-radius:10px;object-fit:contain;cursor:pointer}
+.post-media video{max-width:100%;max-height:400px;border-radius:10px;cursor:pointer}
+.post-actions{display:flex;gap:16px;align-items:center;padding-top:8px;border-top:1px solid rgba(100,140,255,0.08)}
+.like-btn{display:flex;align-items:center;gap:6px;background:transparent;border:none;color:#8899bb;cursor:pointer;font-size:0.9rem;padding:4px 10px;border-radius:12px;transition:all 0.2s}
+.like-btn:hover{background:rgba(231,76,60,0.1);color:#e74c3c}
+.like-btn.liked{color:#e74c3c}
+.like-btn.liked svg{fill:#e74c3c}
+.pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:24px}
+.pagination button{background:rgba(100,140,255,0.1);border:1px solid rgba(100,140,255,0.2);color:#7aa2f7;padding:8px 16px;border-radius:8px;cursor:pointer;transition:all 0.3s}
+.pagination button:hover{background:rgba(100,140,255,0.2)}
+.pagination button:disabled{opacity:0.4;cursor:default}
+.pagination span{color:#8899bb;font-size:0.9rem}
+
+/* Auth Modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:200;display:none;justify-content:center;align-items:center}
+.modal-overlay.active{display:flex}
+.auth-modal{background:rgba(18,25,45,0.98);border:1px solid rgba(100,140,255,0.2);border-radius:20px;padding:32px;width:90%;max-width:420px;max-height:90vh;overflow-y:auto;position:relative}
+.auth-modal h2{text-align:center;margin-bottom:24px;color:#c0caf5;font-size:1.3rem}
+.close-btn{position:absolute;top:12px;right:16px;background:transparent;border:none;color:#8899bb;font-size:1.3rem;cursor:pointer}
+.auth-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid rgba(100,140,255,0.15)}
+.auth-tab{flex:1;background:transparent;border:none;color:#8899bb;padding:10px;cursor:pointer;font-size:0.95rem;transition:all 0.3s;border-bottom:2px solid transparent}
+.auth-tab.active{color:#7aa2f7;border-bottom-color:#7aa2f7}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:0.85rem;color:#8899bb;margin-bottom:6px}
+.form-group input{width:100%;background:rgba(10,15,30,0.8);border:1px solid rgba(100,140,255,0.2);border-radius:10px;padding:12px 14px;color:#d0d0d0;font-size:0.95rem;outline:none;transition:border-color 0.3s}
+.form-group input:focus{border-color:#5a7de0}
+.form-group .input-row{display:flex;gap:10px}
+.form-group .input-row input{flex:1}
+.auth-error{color:#e74c3c;font-size:0.85rem;text-align:center;margin:8px 0;display:none}
+.auth-success{color:#2ecc71;font-size:0.85rem;text-align:center;margin:8px 0;display:none}
+.auth-switch{text-align:center;font-size:0.85rem;color:#8899bb;margin-top:16px}
+.auth-switch a{color:#7aa2f7;cursor:pointer;text-decoration:none}
+.auth-switch a:hover{text-decoration:underline}
+
+/* Toast */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(30,40,70,0.95);color:#c0caf5;padding:12px 24px;border-radius:24px;font-size:0.9rem;z-index:300;opacity:0;transition:opacity 0.3s;pointer-events:none;border:1px solid rgba(100,140,255,0.2)}
+.toast.show{opacity:1;pointer-events:auto}
+
+/* Empty State */
+.empty-state{text-align:center;padding:60px 20px;color:#667799}
+.empty-state .icon{font-size:3rem;margin-bottom:16px}
+.empty-state p{font-size:1rem}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:#8899bb}
+.spinner{width:36px;height:36px;border:3px solid rgba(100,140,255,0.15);border-top-color:#7aa2f7;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Image Viewer */
+.img-viewer{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:250;display:none;justify-content:center;align-items:center;cursor:pointer}
+.img-viewer.active{display:flex}
+.img-viewer img,.img-viewer video{max-width:95%;max-height:95%;border-radius:8px}
+
+/* Responsive */
+@media(max-width:600px){
+  .container{padding:70px 10px 30px}
+  .navbar{padding:10px 14px}
+  .nav-logo{font-size:1.1rem}
+  .post-form,.post-card{padding:14px;border-radius:12px}
+  .auth-modal{padding:24px 16px}
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="nav-logo">❄ 灯雪镇社区</a>
+  <div class="nav-right" id="navRight">
+    <button class="btn btn-outline btn-sm" onclick="showAuthModal('login')" id="navLoginBtn">登录</button>
+  </div>
+</nav>
+
+<div class="container">
+  <!-- Post Form -->
+  <div class="post-form" id="postForm" style="display:none">
+    <textarea id="postContent" placeholder="分享你在灯雪镇的精彩瞬间...(最多500字)" maxlength="500" oninput="updateCharCount()"></textarea>
+    <div class="char-count" id="charCount">0/500</div>
+    <div class="media-upload">
+      <label for="imageUpload">📷 上传图片</label>
+      <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleMediaUpload('image')">
+      <label for="videoUpload">🎬 上传视频</label>
+      <input type="file" id="videoUpload" accept="video/*" style="display:none" onchange="handleMediaUpload('video')">
+    </div>
+    <div class="media-preview" id="mediaPreview"></div>
+    <div class="city-tag" id="cityTag" style="display:none">📍 <span id="cityName"></span></div>
+    <div class="form-bottom">
+      <button class="location-btn" onclick="getLocation()">📍 获取位置</button>
+      <button class="btn" onclick="submitPost()" id="submitBtn">发布动态</button>
+    </div>
+  </div>
+
+  <!-- Posts List -->
+  <div id="postsContainer">
+    <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" id="pagination" style="display:none"></div>
+</div>
+
+<!-- Auth Modal -->
+<div class="modal-overlay" id="authOverlay">
+  <div class="auth-modal">
+    <button class="close-btn" onclick="closeAuthModal()">✕</button>
+    <h2 id="authTitle">登录</h2>
+    <div class="auth-tabs" id="authTabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">登录</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">注册</button>
+    </div>
+    <div id="loginForm">
+      <div class="form-group"><label>邮箱</label><input type="email" id="loginEmail" placeholder="请输入邮箱"></div>
+      <div class="form-group"><label>密码</label><input type="password" id="loginPassword" placeholder="请输入密码"></div>
+      <div class="auth-error" id="loginError"></div>
+      <button class="btn" style="width:100%;padding:12px" onclick="handleLogin()">登录</button>
+    </div>
+    <div id="registerForm" style="display:none">
+      <div class="form-group"><label>邮箱</label><input type="email" id="regEmail" placeholder="请输入邮箱"></div>
+      <div class="form-group"><label>游戏昵称</label><input type="text" id="regNickname" placeholder="Minecraft游戏ID"></div>
+      <div class="form-group"><label>密码</label><input type="password" id="regPassword" placeholder="至少6位"></div>
+      <div class="form-group"><label>确认密码</label><input type="password" id="regPassword2" placeholder="再次输入密码"></div>
+      <div class="form-group"><label>头像URL（可选）</label><input type="url" id="regAvatar" placeholder="https://..."></div>
+      <div class="auth-error" id="regError"></div>
+      <div class="auth-success" id="regSuccess"></div>
+      <button class="btn" style="width:100%;padding:12px" onclick="handleRegister()">注册</button>
+    </div>
+    <div class="auth-switch">
+      <span id="switchText">没有账号？</span> <a id="switchLink" onclick="toggleAuthMode()">去注册</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="img-viewer" id="imgViewer" onclick="closeImageViewer()"><img id="viewerMedia"></div>
+
+<script>
+// ═══════════════════ Supabase 配置 ═══════════════════
+const SUPABASE_URL = 'https://yfotnbwnhulvdjxstens.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_2GG0LPkSoTDt9enH0i5p4Q_GSwQIq8y';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ═══════════════════ 状态 ═══════════════════
+let currentUser = null;
+let userProfile = null;
+let currentPage = 1;
+const PAGE_SIZE = 10;
+let uploadedFiles = [];
+let currentCity = '';
+let authMode = 'login';
+
+// ═══════════════════ 初始化 ═══════════════════
+async function init(){
+  const {data:{session}} = await supabase.auth.getSession();
+  if(session){
+    currentUser = session.user;
+    await loadProfile();
+    updateNav();
+    document.getElementById('postForm').style.display = 'block';
+  }
+  loadPosts();
+}
+
+// ═══════════════════ 加载用户资料 ═══════════════════
+async function loadProfile(){
+  const {data} = await supabase.from('profiles').select('*').eq('id',currentUser.id).single();
+  if(data) userProfile = data;
+  else {
+    // Create profile if doesn't exist
+    await supabase.from('profiles').insert({id:currentUser.id, email:currentUser.email || ''});
+    userProfile = {id:currentUser.id, email:currentUser.email || '', nickname:'', avatar:''};
+  }
+}
+
+// ═══════════════════ 导航栏 ═══════════════════
+function updateNav(){
+  const navRight = document.getElementById('navRight');
+  if(currentUser){
+    const avatar = userProfile?.avatar || '';
+    const name = userProfile?.nickname || currentUser.email?.split('@')[0] || '玩家';
+    navRight.innerHTML = `
+      <div class="user-info">
+        <span style="color:#7aa2f7;font-size:0.9rem">${escapeHtml(name)}</span>
+        <img class="avatar-sm" src="${avatar || 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><rect fill=%22%233b5fcc%22 width=%2240%22 height=%2240%22 rx=%2220%22/><text fill=%22white%22 x=%2220%22 y=%2226%22 text-anchor=%22middle%22 font-size=%2218%22>'+name[0]+'</text></svg>')}" alt="头像" onclick="showProfile()">
+        <button class="btn btn-outline btn-sm" onclick="handleLogout()">退出</button>
+      </div>`;
+  } else {
+    navRight.innerHTML = '<button class="btn btn-outline btn-sm" onclick="showAuthModal(\'login\')">登录</button>';
+  }
+}
+
+async function handleLogout(){
+  await supabase.auth.signOut();
+  currentUser = null;
+  userProfile = null;
+  updateNav();
+  document.getElementById('postForm').style.display = 'none';
+  showToast('已退出登录');
+}
+
+// ═══════════════════ 认证弹窗 ═══════════════════
+function showAuthModal(mode){
+  authMode = mode;
+  document.getElementById('authOverlay').classList.add('active');
+  switchAuthTab(mode);
+}
+
+function closeAuthModal(){
+  document.getElementById('authOverlay').classList.remove('active');
+  clearAuthForms();
+}
+
+function switchAuthTab(tab){
+  authMode = tab;
+  document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('authTitle').textContent = tab==='login'?'登录':'注册';
+  if(tab==='login'){
+    document.getElementById('loginForm').style.display='block';
+    document.getElementById('registerForm').style.display='none';
+    document.getElementById('switchText').textContent='没有账号？';
+    document.getElementById('switchLink').textContent='去注册';
+    document.querySelector('.auth-tab:nth-child(1)').classList.add('active');
+    document.getElementById('authTabs').style.display='none';
+  } else {
+    document.getElementById('loginForm').style.display='none';
+    document.getElementById('registerForm').style.display='block';
+    document.getElementById('switchText').textContent='已有账号？';
+    document.getElementById('switchLink').textContent='去登录';
+    document.querySelector('.auth-tab:nth-child(2)').classList.add('active');
+    document.getElementById('authTabs').style.display='flex';
+  }
+  document.getElementById('loginError').style.display='none';
+  document.getElementById('regError').style.display='none';
+  document.getElementById('regSuccess').style.display='none';
+}
+
+function toggleAuthMode(){
+  switchAuthTab(authMode==='login'?'register':'login');
+}
+
+function clearAuthForms(){
+  ['loginEmail','loginPassword','regEmail','regNickname','regPassword','regPassword2','regAvatar'].forEach(id=>document.getElementById(id).value='');
+}
+
+async function handleLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  if(!email||!password){errEl.textContent='请填写邮箱和密码';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  const {data,error} = await supabase.auth.signInWithPassword({email,password});
+  if(error){
+    errEl.textContent = error.message==='Invalid login credentials'?'邮箱或密码错误':error.message;
+    errEl.style.display='block';
+  } else {
+    currentUser = data.user;
+    await loadProfile();
+    updateNav();
+    closeAuthModal();
+    document.getElementById('postForm').style.display='block';
+    showToast('登录成功！欢迎回来');
+  }
+}
+
+async function handleRegister(){
+  const email = document.getElementById('regEmail').value.trim();
+  const nickname = document.getElementById('regNickname').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const password2 = document.getElementById('regPassword2').value;
+  const avatar = document.getElementById('regAvatar').value.trim();
+  const errEl = document.getElementById('regError');
+  const sucEl = document.getElementById('regSuccess');
+  errEl.style.display='none'; sucEl.style.display='none';
+
+  if(!email||!nickname||!password||!password2){
+    errEl.textContent='请填写所有必填项'; errEl.style.display='block';return;
+  }
+  if(password.length<6){
+    errEl.textContent='密码至少需要6位'; errEl.style.display='block';return;
+  }
+  if(password!==password2){
+    errEl.textContent='两次密码不一致'; errEl.style.display='block';return;
+  }
+
+  const {data,error} = await supabase.auth.signUp({email,password});
+  if(error){
+    errEl.textContent = error.message; errEl.style.display='block';
+  } else {
+    // Create profile
+    if(data.user){
+      await supabase.from('profiles').insert({
+        id:data.user.id, email, nickname, avatar,
+        created_at: new Date().toISOString()
+      });
+    }
+    sucEl.textContent='注册成功！请查看邮箱验证链接（如已开启），然后登录';
+    sucEl.style.display='block';
+    document.getElementById('regPassword').value='';
+    document.getElementById('regPassword2').value='';
+  }
+}
+
+// ═══════════════════ 发帖 ═══════════════════
+let mediaFiles = [];
+
+function updateCharCount(){
+  const len = document.getElementById('postContent').value.length;
+  const el = document.getElementById('charCount');
+  el.textContent = len+'/500';
+  el.className = 'char-count'+(len>480?' warn':'');
+}
+
+function handleMediaUpload(type){
+  const input = document.getElementById(type==='image'?'imageUpload':'videoUpload');
+  const file = input.files[0];
+  if(!file) return;
+  if(mediaFiles.length>=3){showToast('最多上传3个文件');return;}
+  mediaFiles.push({file,type});
+  renderMediaPreview();
+  input.value='';
+}
+
+function renderMediaPreview(){
+  const container = document.getElementById('mediaPreview');
+  container.innerHTML = mediaFiles.map((m,i)=>`
+    <div class="preview-item">
+      ${m.type==='image'
+        ?'<img src="'+URL.createObjectURL(m.file)+'" onerror="this.style.display=\'none\'">'
+        :'<video src="'+URL.createObjectURL(m.file)+'" style="max-width:200px;max-height:150px;border-radius:8px"></video>'}
+      <button class="remove-media" onclick="removeMedia(${i})">×</button>
+    </div>`).join('');
+}
+
+function removeMedia(i){
+  mediaFiles.splice(i,1);
+  renderMediaPreview();
+}
+
+function getLocation(){
+  if(!navigator.geolocation){
+    showToast('浏览器不支持地理位置');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    try{
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`);
+      const data = await res.json();
+      currentCity = data.address?.city || data.address?.town || data.address?.county || '未知城市';
+      document.getElementById('cityTag').style.display='flex';
+      document.getElementById('cityName').textContent=currentCity;
+      showToast('已获取位置：'+currentCity);
+    }catch(e){
+      currentCity = `${pos.coords.latitude.toFixed(2)},${pos.coords.longitude.toFixed(2)}`;
+      document.getElementById('cityTag').style.display='flex';
+      document.getElementById('cityName').textContent=currentCity;
+    }
+  }, ()=>{
+    showToast('获取位置失败，请检查权限');
+  });
+}
+
+async function submitPost(){
+  if(!currentUser){showToast('请先登录');return;}
+  const content = document.getElementById('postContent').value.trim();
+  if(!content&&mediaFiles.length===0){showToast('请输入内容或上传媒体');return;}
+  if(content.length>500){showToast('内容不能超过500字');return;}
+
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled=true; submitBtn.textContent='发布中...';
+  showToast('发布中...');
+
+  let mediaUrls = [];
+  for(const mf of mediaFiles){
+    const ext = mf.file.name.split('.').pop();
+    const filePath = `${currentUser.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const bucket = mf.type==='image'?'post-images':'post-videos';
+    const {data,error} = await supabase.storage.from(bucket).upload(filePath, mf.file);
+    if(!error){
+      const {data:urlData} = supabase.storage.from(bucket).getPublicUrl(filePath);
+      mediaUrls.push({url:urlData.publicUrl,type:mf.type});
+    }
+  }
+
+  const postData = {
+    user_id: currentUser.id,
+    content: content,
+    media_urls: mediaUrls.length>0?JSON.stringify(mediaUrls):null,
+    city: currentCity||null,
+    created_at: new Date().toISOString()
+  };
+
+  const {error} = await supabase.from('posts').insert(postData);
+  if(error){
+    showToast('发布失败：'+error.message);
+  } else {
+    document.getElementById('postContent').value='';
+    mediaFiles=[];
+    renderMediaPreview();
+    document.getElementById('charCount').textContent='0/500';
+    document.getElementById('cityTag').style.display='none';
+    currentCity='';
+    currentPage=1;
+    loadPosts();
+    showToast('发布成功！');
+  }
+  submitBtn.disabled=false; submitBtn.textContent='发布动态';
+}
+
+// ═══════════════════ 加载帖子 ═══════════════════
+async function loadPosts(){
+  const container = document.getElementById('postsContainer');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div><p>加载中...</p></div>';
+
+  // Get total count
+  const {count} = await supabase.from('posts').select('*',{count:'exact',head:true});
+  const totalPages = Math.ceil((count||0)/PAGE_SIZE);
+
+  const from = (currentPage-1)*PAGE_SIZE;
+  const to = from+PAGE_SIZE-1;
+
+  const {data:posts,error} = await supabase.from('posts')
+    .select('*')
+    .order('created_at',{ascending:false})
+    .range(from,to);
+
+  if(error||!posts||posts.length===0){
+    container.innerHTML = '<div class="empty-state"><div class="icon">❄️</div><p>还没有动态，快来发布第一条吧！</p></div>';
+    document.getElementById('pagination').style.display='none';
+    return;
+  }
+
+  // Load profiles and likes
+  const userIds = [...new Set(posts.map(p=>p.user_id))];
+  const {data:profiles} = await supabase.from('profiles').select('*').in('id',userIds);
+  const profileMap = {};
+  if(profiles) profiles.forEach(p=>profileMap[p.id]=p);
+
+  // Load likes if user logged in
+  let userLikes = new Set();
+  if(currentUser){
+    const postIds = posts.map(p=>p.id);
+    const {data:likes} = await supabase.from('likes').select('post_id').eq('user_id',currentUser.id).in('post_id',postIds);
+    if(likes) likes.forEach(l=>userLikes.add(l.post_id));
+  }
+
+  container.innerHTML = posts.map(post=>{
+    const profile = profileMap[post.user_id]||{};
+    const nickname = profile.nickname||post.user_id?.slice(0,8)||'匿名玩家';
+    const avatar = profile.avatar||'';
+    const mediaList = post.media_urls?JSON.parse(post.media_urls):[];
+    const timeStr = formatTime(post.created_at);
+    const liked = userLikes.has(post.id);
+    const likeCount = post.like_count||0;
+
+    return `
+    <div class="post-card">
+      <div class="post-header">
+        <img class="post-avatar" src="${avatar||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><rect fill=%22%233b5fcc%22 width=%2240%22 height=%2240%22 rx=%2220%22/><text fill=%22white%22 x=%2220%22 y=%2226%22 text-anchor=%22middle%22 font-size=%2218%22>'+nickname[0]+'</text></svg>')}" alt="">
+        <div>
+          <div class="post-author">${escapeHtml(nickname)}</div>
+          <div class="post-meta">
+            <span>${timeStr}</span>
+            ${post.city?`<span>📍 ${escapeHtml(post.city)}</span>`:''}
+          </div>
+        </div>
+      </div>
+      ${post.content?`<div class="post-content">${escapeHtml(post.content)}</div>`:''}
+      ${mediaList.length>0?`<div class="post-media">${mediaList.map(m=>{
+        if(m.type==='image') return `<img src="${m.url}" onclick="event.stopPropagation();viewMedia('${m.url}','image')" loading="lazy">`;
+        return `<video src="${m.url}" controls preload="metadata" style="max-width:100%;max-height:400px;border-radius:10px"></video>`;
+      }).join('')}</div>`:''}
+      <div class="post-actions">
+        <button class="like-btn ${liked?'liked':''}" onclick="toggleLike('${post.id}',this)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="${liked?'#e74c3c':'none'}" stroke="${liked?'#e74c3c':'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span class="like-count">${likeCount}</span>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Pagination
+  const pagEl = document.getElementById('pagination');
+  if(totalPages>1){
+    pagEl.style.display='flex';
+    pagEl.innerHTML = `
+      <button onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>上一页</button>
+      <span>${currentPage}/${totalPages}</span>
+      <button onclick="goPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>下一页</button>`;
+  } else {
+    pagEl.style.display='none';
+  }
+}
+
+function goPage(page){
+  currentPage = page;
+  loadPosts();
+  window.scrollTo(0,300);
+}
+
+// ═══════════════════ 点赞 ═══════════════════
+async function toggleLike(postId, btn){
+  if(!currentUser){showToast('请先登录');return;}
+  const isLiked = btn.classList.contains('liked');
+  const countEl = btn.querySelector('.like-count');
+  let currentCount = parseInt(countEl.textContent)||0;
+
+  if(isLiked){
+    await supabase.from('likes').delete().eq('post_id',postId).eq('user_id',currentUser.id);
+    btn.classList.remove('liked');
+    btn.querySelector('svg').setAttribute('fill','none');
+    btn.querySelector('svg').setAttribute('stroke','currentColor');
+    currentCount = Math.max(0,currentCount-1);
+    // Update like count in DB
+    await supabase.from('posts').update({like_count:currentCount}).eq('id',postId);
+  } else {
+    await supabase.from('likes').insert({post_id:postId,user_id:currentUser.id,created_at:new Date().toISOString()});
+    btn.classList.add('liked');
+    btn.querySelector('svg').setAttribute('fill','#e74c3c');
+    btn.querySelector('svg').setAttribute('stroke','#e74c3c');
+    currentCount++;
+    await supabase.from('posts').update({like_count:currentCount}).eq('id',postId);
+  }
+  countEl.textContent = currentCount;
+}
+
+// ═══════════════════ 媒体查看器 ═══════════════════
+function viewMedia(url,type){
+  const viewer=document.getElementById('imgViewer');
+  const media=document.getElementById('viewerMedia');
+  if(type==='video'){
+    media.outerHTML='<video id="viewerMedia" src="'+url+'" controls style="max-width:95%;max-height:95%;border-radius:8px"></video>';
+  } else {
+    if(media.tagName==='VIDEO') media.outerHTML='<img id="viewerMedia" style="max-width:95%;max-height:95%;border-radius:8px">';
+    document.getElementById('viewerMedia').src=url;
+  }
+  viewer.classList.add('active');
+}
+
+function closeImageViewer(){
+  document.getElementById('imgViewer').classList.remove('active');
+  const media=document.getElementById('viewerMedia');
+  if(media.tagName==='VIDEO') media.pause();
+}
+
+// ═══════════════════ Toast ═══════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._timeout);
+  t._timeout=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ═══════════════════ 工具函数 ═══════════════════
+function escapeHtml(str){
+  const d=document.createElement('div');
+  d.textContent=str;
+  return d.innerHTML;
+}
+
+function formatTime(iso){
+  const d=new Date(iso);
+  const now=new Date();
+  const diff=now-d;
+  if(diff<60000) return '刚刚';
+  if(diff<3600000) return Math.floor(diff/60000)+'分钟前';
+  if(diff<86400000) return Math.floor(diff/3600000)+'小时前';
+  if(diff<604800000) return Math.floor(diff/86400000)+'天前';
+  return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0')+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+}
+
+function showProfile(){
+  showToast(userProfile?.nickname||'玩家资料');
+}
+
+// Keyboard
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAuthModal();closeImageViewer();}});
+
+// Start
+init();
+</script>
+</body>
+</html>
