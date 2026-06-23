@@ -71,7 +71,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;backgroun
     <div class="fg"><label>密码</label><input type="password" id="loginPassword" placeholder="输入密码"></div>
     <div class="msg err" id="loginErr"></div>
     <button class="btn" onclick="doLogin()">登 录</button>
-    <div class="link"><a onclick="showPanel('register')">没有账号？去注册</a> · <a onclick="showPanel('resetPwd')">忘记密码？</a></div>
+    <div class="link"><a onclick="showPanel('register')">没有账号？去注册</a></div>
   </div>
 
   <!-- ====== 注册面板 ====== -->
@@ -85,16 +85,6 @@ body{font-family:'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;backgroun
     <div class="msg ok" id="regOk"></div>
     <button class="btn" onclick="doRegister()">注 册</button>
     <div class="link"><a onclick="showPanel('login')">已有账号？去登录</a></div>
-  </div>
-
-  <!-- ====== 忘记密码面板 ====== -->
-  <div class="panel" id="panelResetPwd">
-    <p style="color:#8899bb;font-size:0.88rem;text-align:center;margin-bottom:16px">输入邮箱，我们将发送重置密码链接</p>
-    <div class="fg"><label>邮箱</label><input type="email" id="resetEmail" placeholder="your@email.com"></div>
-    <div class="msg err" id="resetErr"></div>
-    <div class="msg ok" id="resetOk"></div>
-    <button class="btn" onclick="doResetPwd()">发送重置链接</button>
-    <div class="link"><a onclick="showPanel('login')">← 返回登录</a></div>
   </div>
 
   <!-- ====== 用户设置面板（登录后可见） ====== -->
@@ -111,18 +101,13 @@ body{font-family:'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;backgroun
     </div>
 
     <div class="setting-item">
-      <div><div class="setting-label">修改头像</div><div class="setting-desc">输入图片URL</div></div>
-      <button class="btn btn-sm btn-outline" onclick="promptAvatar()">更换</button>
+      <div><div class="setting-label">修改头像</div><div class="setting-desc">上传PNG图片</div></div>
+      <input type="file" id="avatarFile" accept="image/png" style="display:none" onchange="uploadAvatar(this.files[0])">
+      <button class="btn btn-sm btn-outline" onclick="document.getElementById('avatarFile').click()">上传</button>
     </div>
 
     <div class="setting-item">
-      <div><div class="setting-label">重置密码</div><div class="setting-desc">发送重置邮件到邮箱</div></div>
-      <button class="btn btn-sm btn-outline" onclick="doResetPwdFromSettings()">重置</button>
-    </div>
-
-    <div class="setting-item">
-      <div><div class="setting-label">二次验证 (2FA)</div><div class="setting-desc" id="fa2Desc">未开启</div></div>
-      <button class="toggle" id="fa2Toggle" onclick="toggle2FA()"></button>
+      <div><div class="setting-label">二次验证 (2FA)</div><div class="setting-desc" id="fa2Desc" style="color:#667799">未开放</div></div>
     </div>
 
     <div class="divider">绑定设置</div>
@@ -142,7 +127,12 @@ body{font-family:'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;backgroun
       <button class="btn btn-sm btn-outline" onclick="promptBind('phone')">绑定</button>
     </div>
 
-    <button class="btn" style="margin-top:20px;background:linear-gradient(135deg,#c0392b,#e74c3c)" onclick="doLogout()">退出登录</button>
+    <div class="divider">系统</div>
+    <div style="text-align:center;font-size:0.82rem;color:#667799;padding:8px 0">
+      已注册用户: <span style="color:#7aa2f7;font-weight:600" id="userCount">-</span>
+      <span style="margin-left:12px">注册时间: <span style="color:#8899bb" id="regTime">-</span></span>
+    </div>
+    <button class="btn" style="margin-top:16px;background:linear-gradient(135deg,#c0392b,#e74c3c)" onclick="doLogout()">退出登录</button>
   </div>
 </div>
 
@@ -167,9 +157,11 @@ let user=null,profile=null,captchaVal=0,_welcomeShowing=false;
 
 // ── SHA-256 ──
 async function sha256(str){
-  const buf=new TextEncoder().encode(str);
-  const hash=await crypto.subtle.digest('SHA-256',buf);
-  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  try{
+    const buf=new TextEncoder().encode(str);
+    const hash=await crypto.subtle.digest('SHA-256',buf);
+    return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch(e){throw new Error('哈希计算失败:'+e.message);}
 }
 
 // ── 邮箱可用性检查 ──
@@ -211,9 +203,10 @@ function clearMsg(){
 
 // ── captcha ──
 function refreshCaptcha(){
-  const a=Math.floor(Math.random()*20)+1,b=Math.floor(Math.random()*20)+1;
+  let a=Math.floor(Math.random()*20)+1,b=Math.floor(Math.random()*20)+1;
   const ops=['+','-','×'];
   const op=ops[Math.floor(Math.random()*3)];
+  if(op==='-'&&b>a){let t=a;a=b;b=t;} // 确保减法不为负
   document.getElementById('captchaQ').textContent=`${a} ${op} ${b}`;
   captchaVal=op==='+'?a+b:op==='-'?a-b:a*b;
   document.getElementById('captchaA').value='';
@@ -234,7 +227,7 @@ async function loadProfile(){
   const{data}=await s.from('profiles').select('*').eq('id',user.id).single();
   if(data){profile=data}else{
     await s.from('profiles').insert({id:user.id,email:user.email||'',nickname:'',avatar:'',created_at:new Date().toISOString()});
-    profile={id:user.id,email:user.email||'',nickname:'',avatar:'',qq:'',wechat:'',phone:'',two_factor_enabled:false};
+    profile={id:user.id,email:user.email||'',nickname:'',avatar:'',qq:'',wechat:'',phone:'',two_factor_enabled:false,created_at:new Date().toISOString()};
   }
 }
 
@@ -247,7 +240,8 @@ async function doLogin(){
   // 简单邮箱格式校验
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){err.textContent='邮箱格式不正确';err.classList.add('show');return;}
   err.classList.remove('show');
-  const hpwd=await sha256(pwd+email);
+  let hpwd;
+  try{hpwd=await sha256(pwd+email);}catch(e){err.textContent='加密失败,请使用HTTPS访问或更换浏览器';err.classList.add('show');return;}
   const{data,error}=await s.auth.signInWithPassword({email,password:hpwd});
   if(error){err.textContent=error.message==='Invalid login credentials'?'邮箱或密码错误':error.message;err.classList.add('show');}
   else{user=data.user;await loadProfile();showWelcomeModal();}
@@ -283,23 +277,6 @@ async function doRegister(){
   showWelcomeModal();
 }
 
-// ── reset password ──
-async function doResetPwd(){
-  const email=document.getElementById('resetEmail').value.trim();
-  const err=document.getElementById('resetErr'),ok=document.getElementById('resetOk');
-  err.classList.remove('show');ok.classList.remove('show');
-  if(!email){err.textContent='请输入邮箱';err.classList.add('show');return;}
-  const{error}=await s.auth.resetPasswordForEmail(email);
-  if(error){err.textContent=error.message;err.classList.add('show');}
-  else{ok.textContent='重置链接已发送,请检查邮箱';ok.classList.add('show');}
-}
-
-async function doResetPwdFromSettings(){
-  if(!user){toast('请先登录');return;}
-  const{error}=await s.auth.resetPasswordForEmail(user.email);
-  if(error)toast('发送失败:'+error.message);else toast('重置链接已发送到 '+user.email);
-}
-
 // ── settings render ──
 function renderSettings(){
   if(!profile)return;
@@ -307,11 +284,17 @@ function renderSettings(){
   document.getElementById('settingsEmail').textContent=user.email;
   document.getElementById('curNick').textContent=profile.nickname||'未设置';
   document.getElementById('settingsAvatar').src=profile.avatar||'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"><rect fill="#3b5fcc" width="60" height="60" rx="30"/><text fill="white" x="30" y="38" text-anchor="middle" font-size="28">${(profile.nickname||'?')[0]}</text></svg>`);
-  document.getElementById('fa2Toggle').classList.toggle('on',!!profile.two_factor_enabled);
-  document.getElementById('fa2Desc').textContent=profile.two_factor_enabled?'已开启':'未开启';
+  document.getElementById('fa2Desc').textContent='未开放';
   document.getElementById('qqDesc').textContent=profile.qq||'未绑定';
   document.getElementById('wechatDesc').textContent=profile.wechat||'未绑定';
   document.getElementById('phoneDesc').textContent=profile.phone||'未绑定';
+  loadUserCount();
+  document.getElementById('regTime').textContent=profile.created_at?(new Date(profile.created_at)).toLocaleDateString('zh-CN'):'未知';
+}
+
+async function loadUserCount(){
+  const{count,error}=await s.from('profiles').select('*',{count:'exact',head:true});
+  if(!error&&count!=null)document.getElementById('userCount').textContent=count+' 人';
 }
 
 // ── settings actions ──
@@ -323,19 +306,19 @@ async function promptNickname(){
   renderSettings();toast('昵称已更新');
 }
 
-async function promptAvatar(){
-  const v=prompt('头像图片URL:',profile?.avatar||'');
-  if(v===null)return;
-  await s.from('profiles').update({avatar:v.trim()}).eq('id',user.id);
-  profile.avatar=v.trim();
+async function uploadAvatar(file){
+  if(!file){return;}
+  if(file.size>5*1024*1024){toast('文件不能超过5MB');return;}
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(!['png','jpg','jpeg','gif','webp'].includes(ext)){toast('仅支持PNG/JPG/GIF/WEBP');return;}
+  const path=`${user.id}/avatar.${ext}`;
+  const{error:upErr}=await s.storage.from('avatars').upload(path,file,{upsert:true,contentType:file.type});
+  if(upErr){toast('上传失败:'+upErr.message);return;}
+  const{data:urlData}=s.storage.from('avatars').getPublicUrl(path);
+  const url=urlData.publicUrl;
+  await s.from('profiles').update({avatar:url}).eq('id',user.id);
+  profile.avatar=url;
   renderSettings();toast('头像已更新');
-}
-
-async function toggle2FA(){
-  const cur=!profile.two_factor_enabled;
-  await s.from('profiles').update({two_factor_enabled:cur}).eq('id',user.id);
-  profile.two_factor_enabled=cur;
-  renderSettings();toast(cur?'二次验证已开启':'二次验证已关闭');
 }
 
 async function promptBind(type){
