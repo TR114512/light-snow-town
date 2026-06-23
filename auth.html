@@ -265,10 +265,11 @@ async function doRegister(){
   if(pwd.length<6){err.textContent='密码至少6位';err.classList.add('show');return;}
   if(pwd!==pwd2){err.textContent='两次密码不一致';err.classList.add('show');return;}
   if(capAns!==captchaVal){err.textContent='验证答案错误,点击🔄换一题';err.classList.add('show');refreshCaptcha();return;}
+  _welcomeShowing=true; // 阻止auth回调抢切面板
   const btn=document.querySelector('#panelRegister .btn');btn.disabled=true;btn.textContent='注册中...';
   const{data,error}=await s.auth.signUp({email,password:pwd,options:{emailRedirectTo:location.origin+location.pathname}});
   btn.disabled=false;btn.textContent='注 册';
-  if(error){err.textContent=error.message;err.classList.add('show');return;}
+  if(error){_welcomeShowing=false;err.textContent=error.message;err.classList.add('show');return;}
   if(data.user)await s.from('profiles').insert({id:data.user.id,email,nickname:nick,avatar:'',created_at:new Date().toISOString()});
   _pendingEmail=email;_pendingNick=nick;
   sendOtp(email);
@@ -281,8 +282,8 @@ async function sendOtp(email){
   document.getElementById('otpErr').classList.remove('show');
   document.getElementById('otpOk').classList.remove('show');
   showPanel('verify');
-  const{error}=await s.auth.signInWithOtp({email,options:{shouldCreateUser:false}});
-  if(error){document.getElementById('otpErr').textContent='发送失败:'+error.message;document.getElementById('otpErr').classList.add('show');return;}
+  const{error}=await s.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
+  if(error){_welcomeShowing=false;document.getElementById('otpErr').textContent='发送失败:'+error.message;document.getElementById('otpErr').classList.add('show');return;}
   document.getElementById('otpOk').textContent='验证码已发送,请检查邮箱';
   document.getElementById('otpOk').classList.add('show');
   startOtpCountdown(60);
