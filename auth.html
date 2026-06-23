@@ -162,7 +162,7 @@ const SUPABASE_URL='https://yfotnbwnhulvdjxstens.supabase.co';
 const SUPABASE_KEY='sb_publishable_2GG0LPkSoTDt9enH0i5p4Q_GSwQIq8y';
 const s=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let user=null,profile=null,captchaVal=0;
+let user=null,profile=null,captchaVal=0,_welcomeShowing=false;
 
 // ── particles background ──
 (function(){
@@ -211,7 +211,7 @@ refreshCaptcha();
   const{data:{session}}=await s.auth.getSession();
   if(session){user=session.user;await loadProfile();showPanel('settings');}
   s.auth.onAuthStateChange((_e,_session)=>{
-    if(_e==='SIGNED_IN'){user=_session.user;loadProfile().then(()=>showPanel('settings'));}
+    if(_e==='SIGNED_IN'){user=_session.user;loadProfile().then(()=>{if(!_welcomeShowing)showPanel('settings');});}
     if(_e==='SIGNED_OUT'){user=null;profile=null;showPanel('login');}
   });
 })();
@@ -327,6 +327,7 @@ async function promptBind(type){
 
 // ── welcome modal ──
 function showWelcomeModal(){
+  _welcomeShowing=true;
   const name=profile?.nickname||user.email.split('@')[0];
   document.getElementById('welcomeName').textContent=name;
   const avatar=profile?.avatar||'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72"><rect fill="#3b5fcc" width="72" height="72" rx="36"/><text fill="white" x="36" y="46" text-anchor="middle" font-size="32">${name[0]}</text></svg>`);
@@ -343,6 +344,7 @@ function showWelcomeModal(){
   }
 }
 function closeWelcome(){
+  _welcomeShowing=false;
   document.getElementById('welcomeOverlay').classList.remove('show');
   showPanel('settings');
 }
