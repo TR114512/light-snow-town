@@ -29,6 +29,9 @@ body{font-family:'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;backgroun
 .btn-sm{width:auto;padding:8px 18px;font-size:0.85rem}
 .link{text-align:center;font-size:0.84rem;color:#667799;margin-top:16px}.link a{color:#7aa2f7;cursor:pointer;text-decoration:none}.link a:hover{text-decoration:underline}
 .captcha-box{background:rgba(10,16,30,0.5);border:1px dashed rgba(100,140,255,0.2);border-radius:10px;padding:10px 14px;text-align:center;font-size:1.1rem;color:#c0caf5;margin-bottom:14px;user-select:none;letter-spacing:2px}
+.otp-input{width:100%;background:rgba(10,16,30,0.7);border:1px solid rgba(100,140,255,0.3);border-radius:10px;padding:12px 14px;color:#fff;font-size:1.4rem;text-align:center;letter-spacing:10px;outline:none;transition:border-color 0.3s}
+.otp-input:focus{border-color:#5a7de0;box-shadow:0 0 15px rgba(90,125,224,0.2)}
+.countdown{font-size:0.8rem;color:#667799;text-align:center;margin-top:8px}
 .back-link{position:absolute;top:16px;left:20px;color:#667799;text-decoration:none;font-size:0.85rem;transition:color 0.3s}.back-link:hover{color:#7aa2f7}
 .setting-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(100,140,255,0.06)}
 .setting-item:last-child{border-bottom:none}
@@ -84,6 +87,18 @@ body{font-family:'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;backgroun
     <div class="msg ok" id="regOk"></div>
     <button class="btn" onclick="doRegister()">注 册</button>
     <div class="link"><a onclick="showPanel('login')">已有账号？去登录</a></div>
+  </div>
+
+  <!-- ====== 验证邮箱面板 ====== -->
+  <div class="panel" id="panelVerify">
+    <p style="color:#8899bb;font-size:0.88rem;text-align:center;margin-bottom:6px">📧 验证码已发送至</p>
+    <p style="color:#c0caf5;font-weight:600;text-align:center;margin-bottom:18px;word-break:break-all" id="verifyEmail"></p>
+    <div class="fg"><label>6位验证码</label><input type="text" class="otp-input" id="otpCode" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code"></div>
+    <div class="msg err" id="otpErr"></div>
+    <div class="msg ok" id="otpOk"></div>
+    <button class="btn" id="otpBtn" onclick="doVerifyOtp()">验 证</button>
+    <div class="countdown" id="otpCountdown"></div>
+    <div class="link"><a onclick="showPanel('login')">← 返回登录</a></div>
   </div>
 
   <!-- ====== 忘记密码面板 ====== -->
@@ -163,6 +178,7 @@ const SUPABASE_KEY='sb_publishable_2GG0LPkSoTDt9enH0i5p4Q_GSwQIq8y';
 const s=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let user=null,profile=null,captchaVal=0,_welcomeShowing=false;
+let _pendingEmail='',_pendingNick='',_otpTimer=0;
 
 // ── particles background ──
 (function(){
@@ -248,15 +264,59 @@ async function doRegister(){
   if(!email||!nick||!pwd||!pwd2){err.textContent='请填写所有必填项';err.classList.add('show');return;}
   if(pwd.length<6){err.textContent='密码至少6位';err.classList.add('show');return;}
   if(pwd!==pwd2){err.textContent='两次密码不一致';err.classList.add('show');return;}
-  if(capAns!==captchaVal){err.textContent='验证答案错误,点击验证题可刷新';err.classList.add('show');refreshCaptcha();return;}
-  const{data,error}=await s.auth.signUp({email,password:pwd});
-  if(error){err.textContent=error.message;err.classList.add('show');}
-  else{
-    if(data.user)await s.from('profiles').insert({id:data.user.id,email,nickname:nick,avatar:'',created_at:new Date().toISOString()});
-    ok.textContent='注册成功！请查看邮箱验证链接,验证后即可登录';
-    ok.classList.add('show');
-    document.getElementById('regPwd').value=document.getElementById('regPwd2').value='';
-    refreshCaptcha();
+  if(capAns!==captchaVal){err.textContent='验证答案错误,点击🔄换一题';err.classList.add('show');refreshCaptcha();return;}
+  const btn=document.querySelector('#panelRegister .btn');btn.disabled=true;btn.textContent='注册中...';
+  const{data,error}=await s.auth.signUp({email,password:pwd,options:{emailRedirectTo:location.origin+location.pathname}});
+  btn.disabled=false;btn.textContent='注 册';
+  if(error){err.textContent=error.message;err.classList.add('show');return;}
+  if(data.user)await s.from('profiles').insert({id:data.user.id,email,nickname:nick,avatar:'',created_at:new Date().toISOString()});
+  _pendingEmail=email;_pendingNick=nick;
+  sendOtp(email);
+}
+
+// ── OTP email verify ──
+async function sendOtp(email){
+  document.getElementById('verifyEmail').textContent=email;
+  document.getElementById('otpCode').value='';
+  document.getElementById('otpErr').classList.remove('show');
+  document.getElementById('otpOk').classList.remove('show');
+  showPanel('verify');
+  const{error}=await s.auth.signInWithOtp({email,options:{shouldCreateUser:false}});
+  if(error){document.getElementById('otpErr').textContent='发送失败:'+error.message;document.getElementById('otpErr').classList.add('show');return;}
+  document.getElementById('otpOk').textContent='验证码已发送,请检查邮箱';
+  document.getElementById('otpOk').classList.add('show');
+  startOtpCountdown(60);
+}
+
+function startOtpCountdown(s){
+  _otpTimer=s;tick();
+  function tick(){
+    const el=document.getElementById('otpCountdown');
+    if(!el)return;
+    if(_otpTimer<=0){el.innerHTML='<a style="color:#7aa2f7;cursor:pointer;text-decoration:none" onclick="sendOtp(_pendingEmail)">🔄 重新发送验证码</a>';return;}
+    el.textContent=`${_otpTimer}秒后可重新发送`;
+    _otpTimer--;
+    setTimeout(tick,1000);
+  }
+}
+
+async function doVerifyOtp(){
+  const code=document.getElementById('otpCode').value.trim();
+  const err=document.getElementById('otpErr'),ok=document.getElementById('otpOk');
+  err.classList.remove('show');ok.classList.remove('show');
+  if(!code||code.length!==6||!/^\d{6}$/.test(code)){err.textContent='请输入6位数字验证码';err.classList.add('show');return;}
+  const btn=document.getElementById('otpBtn');btn.disabled=true;btn.textContent='验证中...';
+  const{data,error}=await s.auth.verifyOtp({email:_pendingEmail,token:code,type:'email'});
+  btn.disabled=false;btn.textContent='验 证';
+  if(error){
+    if(error.message.includes('expired'))err.textContent='验证码已过期,请重新发送';
+    else if(error.message.includes('Invalid'))err.textContent='验证码错误';
+    else err.textContent=error.message;
+    err.classList.add('show');
+  }else{
+    user=data.user;await loadProfile();_pendingEmail='';_pendingNick='';
+    toast('✅ 邮箱验证成功！');
+    showWelcomeModal();
   }
 }
 
