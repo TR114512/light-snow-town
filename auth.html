@@ -79,7 +79,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;backgroun
     <div class="fg"><label>游戏昵称</label><input type="text" id="regNick" placeholder="Minecraft ID"></div>
     <div class="fg"><label>密码</label><input type="password" id="regPwd" placeholder="至少6位"></div>
     <div class="fg"><label>确认密码</label><input type="password" id="regPwd2" placeholder="再次输入"></div>
-    <div class="captcha-box" id="captchaBox" onclick="refreshCaptcha()" title="点击刷新">🤖 真人验证: <strong id="captchaQ">?</strong> = <input type="text" id="captchaA" placeholder="?" style="width:50px;display:inline;text-align:center;padding:4px;margin-left:6px"></div>
+    <div class="captcha-box" title="点击刷新">🤖 真人验证: <strong id="captchaQ">?</strong> = <input type="text" id="captchaA" placeholder="?" style="width:50px;display:inline;text-align:center;padding:4px;margin-left:6px" onclick="event.stopPropagation()"> <button type="button" onclick="refreshCaptcha();event.stopPropagation()" style="background:none;border:none;color:#7aa2f7;cursor:pointer;font-size:0.82rem;vertical-align:middle">🔄 换一题</button></div>
     <div class="msg err" id="regErr"></div>
     <div class="msg ok" id="regOk"></div>
     <button class="btn" onclick="doRegister()">注 册</button>
