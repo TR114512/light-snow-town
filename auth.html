@@ -41,6 +41,18 @@ body{font-family:'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;backgroun
 .divider{text-align:center;color:#667799;font-size:0.78rem;margin:16px 0;position:relative}.divider::before,.divider::after{content:'';position:absolute;top:50%;width:30%;height:1px;background:rgba(100,140,255,0.1)}.divider::before{left:0}.divider::after{right:0}
 .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(30,40,70,0.95);color:#c0caf5;padding:12px 24px;border-radius:24px;font-size:0.88rem;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;border:1px solid rgba(100,140,255,0.2)}
 .toast.show{opacity:1;pointer-events:auto}
+/* 欢迎模态框 */
+.welcome-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.4s}
+.welcome-overlay.show{opacity:1;pointer-events:auto}
+.welcome-modal{background:linear-gradient(145deg,rgba(15,22,42,0.96),rgba(20,32,62,0.96));border:1px solid rgba(100,140,255,0.25);border-radius:20px;padding:40px 36px;text-align:center;max-width:380px;width:90%;transform:scale(0.85) translateY(20px);transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 80px rgba(100,140,255,0.08)}
+.welcome-overlay.show .welcome-modal{transform:scale(1) translateY(0)}
+.welcome-avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid rgba(100,140,255,0.4);margin-bottom:16px;box-shadow:0 0 30px rgba(100,140,255,0.15)}
+.welcome-title{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,#7aa2f7,#c0caf5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.welcome-name{font-size:1.3rem;font-weight:600;color:#e0e0e0;margin-bottom:24px}
+.welcome-sparkle{position:absolute;pointer-events:none;width:4px;height:4px;background:#fff;border-radius:50%;animation:welcomeSpark 2s ease-out forwards}
+@keyframes welcomeSpark{0%{opacity:1;transform:translate(0,0)scale(1)}100%{opacity:0;transform:translate(var(--sx),var(--sy))scale(0)}}
+.welcome-btn{background:linear-gradient(135deg,#3b5fcc,#5a7de0);border:none;color:#fff;padding:10px 40px;border-radius:24px;font-size:1rem;cursor:pointer;font-weight:600;transition:all 0.3s}
+.welcome-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(59,95,204,0.5)}
 @media(max-width:480px){.card{padding:28px 20px}}
 </style>
 </head>
@@ -133,6 +145,16 @@ body{font-family:'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;backgroun
   </div>
 </div>
 
+<!-- 欢迎回来模态框 -->
+<div class="welcome-overlay" id="welcomeOverlay" onclick="if(event.target===this)closeWelcome()">
+  <div class="welcome-modal" id="welcomeModal">
+    <img class="welcome-avatar" id="welcomeAvatar" src="" alt="avatar">
+    <div class="welcome-title">🎉 欢迎回来</div>
+    <div class="welcome-name" id="welcomeName"></div>
+    <button class="welcome-btn" onclick="closeWelcome()">进入灯雪镇</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -211,7 +233,7 @@ async function doLogin(){
   err.classList.remove('show');
   const{data,error}=await s.auth.signInWithPassword({email,password:pwd});
   if(error){err.textContent=error.message==='Invalid login credentials'?'邮箱或密码错误':error.message;err.classList.add('show');}
-  else{user=data.user;await loadProfile();showPanel('settings');toast('登录成功！');}
+  else{user=data.user;await loadProfile();showWelcomeModal();}
 }
 
 // ── register ──
@@ -303,6 +325,27 @@ async function promptBind(type){
   renderSettings();toast(`${labels[type]}已更新`);
 }
 
+// ── welcome modal ──
+function showWelcomeModal(){
+  const name=profile?.nickname||user.email.split('@')[0];
+  document.getElementById('welcomeName').textContent=name;
+  const avatar=profile?.avatar||'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72"><rect fill="#3b5fcc" width="72" height="72" rx="36"/><text fill="white" x="36" y="46" text-anchor="middle" font-size="32">${name[0]}</text></svg>`);
+  document.getElementById('welcomeAvatar').src=avatar;
+  document.getElementById('welcomeOverlay').classList.add('show');
+  // sparkles
+  const modal=document.getElementById('welcomeModal');
+  for(let i=0;i<12;i++){
+    const spark=document.createElement('div');spark.className='welcome-sparkle';
+    const angle=Math.random()*Math.PI*2,dist=Math.random()*80+40;
+    spark.style.cssText=`--sx:${Math.cos(angle)*dist}px;--sy:${Math.sin(angle)*dist}px;left:50%;top:50%;animation-delay:${Math.random()*0.6}s`;
+    modal.appendChild(spark);
+    setTimeout(()=>spark.remove(),2600);
+  }
+}
+function closeWelcome(){
+  document.getElementById('welcomeOverlay').classList.remove('show');
+  showPanel('settings');
+}
 async function doLogout(){
   await s.auth.signOut();
   user=null;profile=null;
