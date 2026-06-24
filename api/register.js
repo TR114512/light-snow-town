@@ -1,10 +1,14 @@
-const { supabase, jsonRes, handleOptions } = require('./_utils');
+const {
+    supabase,
+    jsonRes,
+    handleOptions,
+    sendVerificationEmail,
+    saveVerificationCode
+} = require('./_utils');
 
 module.exports = async (req, res) => {
-    // 先处理 OPTIONS 预检
     if (handleOptions(req, res)) return;
 
-    // 仅允许 POST
     if (req.method !== 'POST') {
         return jsonRes(res, 405, { message: 'Method not allowed' });
     }
@@ -15,21 +19,18 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                emailRedirectTo: 'https://tr114512.github.io/light-snow-town/index.html'
-            }
-        });
-
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) {
             console.error('Supabase signUp error:', error);
             return jsonRes(res, 400, { message: error.message });
         }
 
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        await saveVerificationCode(data.user.id, code, 'email_verification');
+        await sendVerificationEmail(email, code);
+
         jsonRes(res, 200, {
-            message: '注册成功，请查收确认邮件',
+            message: '注册成功，验证码已发送至您的邮箱',
             user: { email: data.user.email, id: data.user.id }
         });
     } catch (err) {
