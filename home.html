@@ -170,7 +170,7 @@
         .dev-name { font-weight:500; color:var(--text-main); word-break:break-word; }
         .dev-note { font-size:0.75rem; margin-top:1.2rem; text-align:center; opacity:0.7; border-top:1px dashed var(--glass-border); padding-top:1rem; }
 
-        .toast-notification { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); color:#eef5ff; padding:10px 24px; border-radius:60px; font-size:0.9rem; font-weight:500; z-index:1200; opacity:0; transition:opacity 0.2s, transform 0.2s; pointer-events:none; border-left:3px solid var(--accent-blue); box-shadow:0 5px 20px rgba(0,0,0,0.3); white-space:nowrap; }
+        .toast-notification { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); color:#eef5ff; padding:10px 24px; border-radius:60px; font-size:0.9rem; font-weight:500; z-index:99999; opacity:0; transition:opacity 0.2s, transform 0.2s; pointer-events:none; border-left:3px solid var(--accent-blue); box-shadow:0 5px 20px rgba(0,0,0,0.3); white-space:nowrap; }
         body.theme-light .toast-notification { background:rgba(30,47,60,0.9); color:#f0f4fa; }
         .toast-notification.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
@@ -675,15 +675,15 @@
                 const qq = document.getElementById('regQQModal').value.trim();
                 const gameId = document.getElementById('regGameIdModal').value.trim();
                 const data = await apiCall('register', { email, password: pwd, qq, game_id: gameId });
-                // 显示验证码
+                // 显示验证码输入框，提示查邮箱
                 document.getElementById('regCodeGroupModal').style.display = 'block';
-                document.getElementById('regCodeHintModal').textContent = '验证码：' + data.code + '（10分钟内有效）';
-                document.getElementById('regCodeHintModal').style.color = '#f5b042';
-                document.getElementById('regCodeModal').value = data.code;
+                document.getElementById('regCodeHintModal').textContent = '验证码已发送至 ' + email + '，请查收邮件';
+                document.getElementById('regCodeHintModal').style.color = 'var(--text-dim)';
+                document.getElementById('regCodeModal').value = '';
                 document.getElementById('regCodeModal').focus();
                 document.getElementById('regPasswordModal').value = '';
                 document.getElementById('regPasswordConfirmModal').value = '';
-                showToast(data.message || '注册成功，请输入验证码', 'success');
+                showToast(data.message || '注册成功，请查收验证码邮件', 'success');
             } catch (err) {
                 showToast(err.message, 'error');
             }

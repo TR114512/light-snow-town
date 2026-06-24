@@ -1,11 +1,32 @@
 const { createClient } = require('@supabase/supabase-js');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const jwtSecret = process.env.JWT_SECRET;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// ===== 邮件发送（QQ邮箱） =====
+const transporter = nodemailer.createTransport({
+    host: 'smtp.qq.com',
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
+async function sendVerificationEmail(email, code) {
+    await transporter.sendMail({
+        from: `"灯雪镇" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: '【灯雪镇】邮箱验证码',
+        html: `<p>您的验证码是：<strong style="font-size:24px;letter-spacing:4px;">${code}</strong></p><p>10分钟内有效，请勿透露给他人。</p>`
+    });
+}
 
 function signToken(userId, email) {
     return jwt.sign({ id: userId, email }, jwtSecret, { expiresIn: '7d' });
@@ -139,5 +160,6 @@ module.exports = {
     hasPermission,
     canManageRole,
     ROLE_LEVEL,
-    ROLE_CAN_MANAGE
+    ROLE_CAN_MANAGE,
+    sendVerificationEmail
 };

@@ -1,4 +1,4 @@
-const { supabase, jsonRes, handleOptions } = require('./_utils');
+const { supabase, jsonRes, handleOptions, sendVerificationEmail } = require('./_utils');
 
 module.exports = async (req, res) => {
     if (handleOptions(req, res)) return;
@@ -13,17 +13,16 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { data, error } = await supabase.auth.signUp({
+        // admin.createUser：创建用户但不发 Supabase 确认邮件
+        const { data, error } = await supabase.auth.admin.createUser({
             email,
             password,
-            options: {
-                emailRedirectTo: process.env.SITE_URL || '/',
-                data: { qq: qq || '', game_id: game_id || '' }
-            }
+            email_confirm: false,
+            user_metadata: { qq: qq || '', game_id: game_id || '' }
         });
 
         if (error) {
-            console.error('Supabase signUp error:', error);
+            console.error('Supabase createUser error:', error);
             return jsonRes(res, 400, { message: error.message });
         }
 
@@ -36,7 +35,7 @@ module.exports = async (req, res) => {
             updated_at: new Date().toISOString()
         });
 
-        // 生成6位验证码
+        // 生成6位验证码并发邮件
         const code = String(Math.floor(100000 + Math.random() * 900000));
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -47,13 +46,15 @@ module.exports = async (req, res) => {
             expires_at: expiresAt.toISOString()
         });
 
+        // 发邮件
+        await sendVerificationEmail(email, code);
+
         jsonRes(res, 200, {
-            message: '注册成功！请输入下方验证码完成激活',
-            code: code,
+            message: '注册成功！验证码已发送至您的邮箱，请输入验证码完成激活',
             user: { email: data.user.email, id: data.user.id, qq: qq || '', game_id: game_id || '' }
         });
     } catch (err) {
-        console.error('Unexpected error:', err);
+        console.error('Register error:', err);
         jsonRes(res, 500, { message: '服务器内部错误' });
     }
 };
