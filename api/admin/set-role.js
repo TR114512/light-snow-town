@@ -1,11 +1,10 @@
-const { supabase, jsonRes, handleOptions, requireRole, getUserRole, canManageRole, ROLE_LEVEL } = require('../_utils');
+const { supabase, jsonRes, handleOptions, requireRole, getUserRole } = require('../_utils');
 
-const VALID_ROLES = ['super_admin', 'admin', 'moderator', 'user'];
+const VALID_ROLES = ['super_admin', 'admin', 'user'];
 
 module.exports = async (req, res) => {
     if (handleOptions(req, res)) return;
 
-    // 需要 admin 或以上
     const operator = await requireRole(req, res, 'admin');
     if (!operator) return;
 
@@ -17,12 +16,9 @@ module.exports = async (req, res) => {
     if (!userId || !role) {
         return jsonRes(res, 400, { message: '请提供 userId 和 role' });
     }
-
     if (!VALID_ROLES.includes(role)) {
-        return jsonRes(res, 400, { message: `角色只能是: ${VALID_ROLES.join(', ')}` });
+        return jsonRes(res, 400, { message: '角色只能是: ' + VALID_ROLES.join(', ') });
     }
-
-    // 操作者不能给自己改角色（防止锁死）
     if (userId === operator.id) {
         return jsonRes(res, 400, { message: '不能修改自己的角色' });
     }
@@ -31,49 +27,46 @@ module.exports = async (req, res) => {
         // 查目标用户
         const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
         if (userError || !user) {
-            return jsonRes(res, 404, { message: '用户不存在' });
+            return jsonRes(res, 404, { message: '用户不存在: ' + (userError?.message || '') });
         }
 
-        // 查目标用户当前角色
+        // 目标用户当前角色
         const targetRole = await getUserRole(userId, user.email);
 
-        // 只有 super_admin 能管理 admin 角色
-        if (targetRole === 'admin' || targetRole === 'super_admin') {
-            if (operator.role !== 'super_admin') {
-                return jsonRes(res, 403, { message: '只有超级管理员才能管理管理员账号' });
-            }
+        // super_admin 保护
+        if ((targetRole === 'admin' || targetRole === 'super_admin') && operator.role !== 'super_admin') {
+            return jsonRes(res, 403, { message: '只有超级管理员才能管理管理员账号' });
+        }
+        if (role === 'super_admin') {
+            return jsonRes(res, 403, { message: '超级管理员只能通过数据库设置' });
         }
 
-        // 不能设置比自己层级高或相等的角色
-        if (ROLE_LEVEL[role] >= ROLE_LEVEL[operator.role] && operator.role !== 'super_admin') {
-            return jsonRes(res, 403, { message: `不能设置 ${role} 角色，权限不足` });
-        }
+        // 直接用 admin API 更新 user_metadata 存储角色（绕过 RLS）
+        const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+            user_metadata: { role: role }
+        });
 
-        // 超级管理员也不能把别人设成 super_admin（只能通过 SQL）
-        if (role === 'super_admin' && operator.role === 'super_admin') {
-            return jsonRes(res, 403, { message: '超级管理员只能通过数据库直接设置' });
-        }
-
-        // 更新角色
+        // 同时也更新 profiles 表
         const { error: upsertError } = await supabase
             .from('profiles')
-            .upsert({
-                id: userId,
-                email: user.email,
-                role: role,
-                updated_at: new Date().toISOString()
-            });
+            .upsert({ id: userId, email: user.email, role: role, updated_at: new Date().toISOString() });
 
         if (upsertError) {
-            return jsonRes(res, 500, { message: upsertError.message });
+            console.error('Profiles upsert error:', upsertError);
+            // profiles 更新失败不影响，metadata 已更新
+        }
+
+        if (updateError) {
+            console.error('Update user error:', updateError);
+            return jsonRes(res, 500, { message: updateError.message });
         }
 
         jsonRes(res, 200, {
             message: `已将 ${user.email} 的角色从 ${targetRole} 改为 ${role}`,
-            user: { id: userId, email: user.email, role: role, previous_role: targetRole }
+            user: { id: userId, email: user.email, role: role }
         });
     } catch (err) {
         console.error('Set role error:', err);
-        jsonRes(res, 500, { message: '服务器错误' });
+        jsonRes(res, 500, { message: '服务器错误: ' + (err.message || '') });
     }
 };

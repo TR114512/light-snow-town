@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灯雪镇 · 管理面板</title>
+    <link rel="icon" type="image/jpeg" href="server-icon.jpg">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#0f1a2e;--card:rgba(15,26,46,0.9);--border:rgba(59,130,246,0.3);--blue:#3b82f6;--gold:#f5b042;--text:#e0e8f0;--dim:#8899aa;--danger:#ef4444;--success:#22c55e;--input-bg:#1a2a3f}
+        body.light{--bg:#f0f4fa;--card:rgba(255,255,255,0.95);--border:rgba(59,130,246,0.25);--text:#1e2f3c;--dim:#5a6f8c;--input-bg:#e8eef4}
+        body{background:var(--bg);color:var(--text);font-family:'Segoe UI','PingFang SC',system-ui,sans-serif;min-height:100vh}
+        .container{max-width:1200px;margin:0 auto;padding:24px 20px}
+        header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+        header h1{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,#d9eaff,#7bc5ff,#f5b042);background-clip:text;-webkit-background-clip:text;color:transparent}
+        header .nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .btn{padding:8px 18px;border-radius:30px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:0.85rem;transition:.15s;font-family:inherit;white-space:nowrap}
+        .btn:hover{border-color:var(--blue);background:rgba(59,130,246,0.1)}
+        .btn.danger{color:var(--danger);border-color:rgba(239,68,68,0.4)}
+        .btn.danger:hover{background:rgba(239,68,68,0.15);border-color:var(--danger)}
+        .btn.gold{color:var(--gold);border-color:rgba(245,176,66,0.4)}
+        .btn.gold:hover{background:rgba(245,176,66,0.15);border-color:var(--gold)}
+
+        .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+        .search-box{flex:1;min-width:200px;padding:10px 16px;border-radius:30px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;outline:none;font-family:inherit}
+        .search-box:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,0.2)}
+        .stats{font-size:0.85rem;color:var(--dim)}
+
+        .table-wrap{background:var(--card);border-radius:16px;border:1px solid var(--border);overflow:hidden}
+        .table-wrap table{width:100%;border-collapse:collapse}
+        .table-wrap th{text-align:left;padding:12px 16px;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--dim);border-bottom:1px solid var(--border);background:rgba(0,0,0,0.15)}
+        .table-wrap td{padding:10px 16px;font-size:0.88rem;border-bottom:1px solid rgba(255,255,255,0.05)}
+        .table-wrap tr:hover td{background:rgba(59,130,246,0.05)}
+        .table-wrap tr:last-child td{border-bottom:none}
+
+        .badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.7rem;font-weight:600}
+        .badge.verified{background:rgba(34,197,94,0.15);color:var(--success)}
+        .badge.unverified{background:rgba(239,68,68,0.15);color:var(--danger)}
+        .badge.super{background:rgba(245,176,66,0.2);color:var(--gold)}
+        .badge.admin{background:rgba(59,130,246,0.2);color:var(--blue)}
+        .badge.user{background:rgba(136,153,170,0.15);color:var(--dim)}
+
+        .role-select{padding:4px 10px;border-radius:16px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.75rem;cursor:pointer;font-family:inherit}
+        .role-select:focus{border-color:var(--blue);outline:none}
+
+        .actions{display:flex;gap:6px;white-space:nowrap}
+        .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);color:#fff;padding:10px 24px;border-radius:30px;font-size:0.85rem;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;border-left:3px solid var(--blue)}
+        .toast.show{opacity:1}
+        .toast.err{border-left-color:var(--danger)}
+        .toast.ok{border-left-color:var(--success)}
+        .loading{text-align:center;padding:40px;color:var(--dim)}
+
+        @media(max-width:700px){.table-wrap{overflow-x:auto}header{flex-direction:column;align-items:flex-start}.actions{flex-direction:column}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🛡 灯雪镇 · 管理面板</h1>
+        <div class="nav">
+            <span id="operatorInfo" style="font-size:0.8rem;color:var(--dim);"></span>
+            <button class="btn" onclick="location.href='/'">← 返回主页</button>
+            <button class="btn danger" id="logoutBtn">退出</button>
+        </div>
+    </header>
+
+    <div class="toolbar">
+        <input class="search-box" id="searchInput" placeholder="🔍 搜索用户邮箱...">
+        <span class="stats" id="statsText">共 0 个用户</span>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>邮箱</th>
+                    <th>状态</th>
+                    <th>角色</th>
+                    <th>注册时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <tr><td colspan="5" class="loading">加载中...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+    'use strict';
+    const API_BASE = '/api';
+    const ROLE_LABELS = {'super_admin':'超级管理员','admin':'管理员','user':'用户'};
+    const CAN_MANAGE = {'super_admin':['admin','user'],'admin':['user'],'user':[]};
+
+    let operatorRole = 'user';
+    let operatorEmail = '';
+
+    // ---- Toast ----
+    const toastEl = document.getElementById('toast');
+    let toastTimer;
+    function toast(msg, type){
+        toastEl.textContent = msg;
+        toastEl.className = 'toast ' + (type === 'ok' ? 'ok' : type === 'err' ? 'err' : '');
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2500);
+    }
+
+    // ---- 鉴权 ----
+    async function checkAuth(){
+        const token = localStorage.getItem('lt_token');
+        if(!token){ location.href = '/'; return; }
+        try{
+            const res = await fetch(API_BASE + '/me', {
+                headers: {'Authorization':'Bearer '+token}
+            });
+            const data = await res.json();
+            if(!res.ok || !data.user) throw new Error('auth failed');
+            if(data.user.role !== 'super_admin' && data.user.role !== 'admin'){
+                toast('需要管理员权限','err');
+                setTimeout(() => location.href = '/', 1500);
+                return;
+            }
+            operatorRole = data.user.role;
+            operatorEmail = data.user.email;
+            document.getElementById('operatorInfo').textContent = '👤 ' + operatorEmail + ' (' + (ROLE_LABELS[operatorRole]||operatorRole) + ')';
+            loadUsers();
+        }catch(e){
+            localStorage.removeItem('lt_token');
+            location.href = '/';
+        }
+    }
+
+    // ---- 加载用户列表 ----
+    async function loadUsers(search){
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" class="loading">加载中...</td></tr>';
+        const token = localStorage.getItem('lt_token');
+        try{
+            let url = API_BASE + '/admin/users';
+            if(search) url += '?search=' + encodeURIComponent(search);
+            const res = await fetch(url, {headers:{'Authorization':'Bearer '+token}});
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.message || '加载失败');
+
+            document.getElementById('statsText').textContent = '共 ' + data.total + ' 个用户';
+
+            if(data.users.length === 0){
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">没有匹配用户</td></tr>';
+                return;
+            }
+
+            const canManage = CAN_MANAGE[operatorRole] || [];
+            const myId = JSON.parse(localStorage.getItem('lt_user')||'{}').id;
+
+            tbody.innerHTML = data.users.map(u => {
+                const isSelf = u.id === myId;
+                const canEdit = canManage.includes(u.role) && !isSelf;
+                const canDelete = u.role !== 'super_admin' && !isSelf;
+                const canPwd = !isSelf;
+
+                let roleCell;
+                if(canEdit){
+                    const opts = canManage.map(r => `<option value="${r}" ${u.role===r?'selected':''}>${ROLE_LABELS[r]}</option>`).join('');
+                    roleCell = `<select class="role-select" onchange="setRole('${u.id}','${u.email}',this.value)">${opts}</select>`;
+                } else {
+                    const cls = u.role === 'super_admin' ? 'super' : u.role === 'admin' ? 'admin' : 'user';
+                    roleCell = `<span class="badge ${cls}">${ROLE_LABELS[u.role]||u.role}</span>`;
+                }
+
+                return `<tr>
+                    <td><strong>${u.email}</strong>${isSelf?' <span style="font-size:0.7rem;opacity:0.5;">(你)</span>':''}</td>
+                    <td>${u.email_confirmed?'<span class="badge verified">✓ 已验证</span>':'<span class="badge unverified">✗ 未验证</span>'}</td>
+                    <td>${roleCell}</td>
+                    <td style="font-size:0.8rem;color:var(--dim)">${new Date(u.created_at).toLocaleDateString('zh-CN')}</td>
+                    <td><div class="actions">
+                        ${canPwd?`<button class="btn" style="font-size:0.7rem;padding:4px 12px" onclick="resetPwd('${u.id}','${u.email}')">改密码</button>`:''}
+                        ${canDelete?`<button class="btn danger" style="font-size:0.7rem;padding:4px 12px" onclick="deleteUser('${u.id}','${u.email}')">删除</button>`:''}
+                    </div></td>
+                </tr>`;
+            }).join('');
+        }catch(e){
+            tbody.innerHTML = `<tr><td colspan="5" class="loading" style="color:var(--danger)">${e.message}</td></tr>`;
+        }
+    }
+
+    // ---- 设置角色 ----
+    window.setRole = async function(userId, email, role){
+        if(!confirm(`将 ${email} 设为「${ROLE_LABELS[role]}」？`)){ loadUsers(); return; }
+        const token = localStorage.getItem('lt_token');
+        try{
+            const res = await fetch(API_BASE+'/admin/set-role',{
+                method:'POST',
+                headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                body:JSON.stringify({userId,role})
+            });
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.message);
+            toast(data.message,'ok');
+            loadUsers(document.getElementById('searchInput').value.trim());
+        }catch(e){ toast(e.message,'err'); loadUsers(); }
+    };
+
+    // ---- 改密码 ----
+    window.resetPwd = async function(userId, email){
+        const pwd = prompt(`为「${email}」设置新密码（至少8位）：`);
+        if(!pwd) return;
+        if(pwd.length < 8){ toast('密码至少8位','err'); return; }
+        const token = localStorage.getItem('lt_token');
+        try{
+            const res = await fetch(API_BASE+'/admin/reset-user-password',{
+                method:'POST',
+                headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                body:JSON.stringify({userId,newPassword:pwd})
+            });
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.message);
+            toast(data.message,'ok');
+        }catch(e){ toast(e.message,'err'); }
+    };
+
+    // ---- 删除 ----
+    window.deleteUser = async function(userId, email){
+        if(!confirm(`⚠️ 永久删除「${email}」？不可撤销！`)) return;
+        const token = localStorage.getItem('lt_token');
+        try{
+            const res = await fetch(API_BASE+'/admin/delete-user',{
+                method:'POST',
+                headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                body:JSON.stringify({userId})
+            });
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.message);
+            toast(data.message,'ok');
+            loadUsers(document.getElementById('searchInput').value.trim());
+        }catch(e){ toast(e.message,'err'); }
+    };
+
+    // ---- 事件绑定 ----
+    document.getElementById('searchInput').addEventListener('input',function(){
+        loadUsers(this.value.trim());
+    });
+    document.getElementById('logoutBtn').addEventListener('click',function(){
+        localStorage.removeItem('lt_token');
+        localStorage.removeItem('lt_user');
+        location.href = '/';
+    });
+
+    // ---- 主题同步 ----
+    if(localStorage.getItem('ui_theme') === 'light') document.body.classList.add('light');
+
+    // ---- 启动 ----
+    checkAuth();
+})();
+</script>
+</body>
+</html>

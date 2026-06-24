@@ -183,25 +183,6 @@
         .loading-text { color:#7bc5ff; font-size:0.9rem; letter-spacing:2px; }
 
         @media (max-width:700px) { .main-content { padding:1rem; } .server-name { font-size:2.2rem; } .top-bar { flex-direction:column; gap:12px; align-items:start; } .action-buttons { align-self:flex-end; } .ip-card { font-size:0.8rem; padding:6px 12px; gap:6px; } .dev-item { flex-wrap:wrap; gap:8px; } .toast-notification { white-space:nowrap; font-size:0.8rem; padding:6px 18px; } }
-        /* ===== 管理员面板样式 ===== */
-        .admin-user-item { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-radius:40px; background:var(--badge-bg); margin-bottom:8px; border-left:3px solid var(--accent-blue); gap:8px; flex-wrap:wrap; transition:0.2s; }
-        .admin-user-item:hover { background:rgba(44,156,240,0.15); border-left-color:var(--accent-gold); }
-        .admin-user-info { flex:1; min-width:140px; }
-        .admin-user-email { font-size:0.85rem; font-weight:500; word-break:break-all; }
-        .admin-user-meta { font-size:0.7rem; color:var(--text-dim); }
-        .admin-user-actions { display:flex; gap:6px; align-items:center; }
-        .admin-badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:0.65rem; font-weight:700; }
-        .admin-badge.admin { background:#f5b042; color:#0a1a2a; }
-        .admin-badge.user { background:var(--accent-blue); color:#fff; }
-        .admin-badge.confirmed { background:#67c23a; color:#fff; }
-        .admin-badge.unconfirmed { background:#f56c6c; color:#fff; }
-        .admin-btn-sm { padding:4px 12px; border-radius:20px; border:1px solid var(--glass-border); background:transparent; color:var(--text-dim); font-size:0.7rem; cursor:pointer; transition:0.15s; white-space:nowrap; }
-        .admin-btn-sm:hover { border-color:var(--accent-blue); color:var(--text-main); }
-        .admin-btn-sm.danger:hover { border-color:#f56c6c; color:#f56c6c; background:rgba(245,108,108,0.1); }
-        .admin-btn-sm.promote:hover { border-color:var(--accent-gold); color:var(--accent-gold); }
-        .admin-role-select { padding:3px 8px; border-radius:20px; border:1px solid var(--glass-border); background:var(--input-bg); color:var(--text-main); font-size:0.7rem; cursor:pointer; font-family:inherit; }
-        .admin-role-select:focus { border-color:var(--accent-blue); outline:none; }
-
         ::-webkit-scrollbar { width:5px; }
         ::-webkit-scrollbar-track { background:#0a1f2e; }
         ::-webkit-scrollbar-thumb { background:#3b82f6; border-radius:10px; }
@@ -326,9 +307,14 @@
                     <label>确认密码</label>
                     <input type="password" class="form-control" id="regPasswordConfirmModal" placeholder="再次输入密码" required>
                 </div>
-                <p class="form-hint" style="text-align:center; margin-bottom:12px; color:var(--text-dim);">
-                    📧 注册后 Supabase 将自动发送确认邮件，点击邮件中的链接即可激活账号
-                </p>
+                <div class="form-group" id="regCodeGroupModal" style="display:none;">
+                    <label>📧 验证码（注册成功后显示在下方）</label>
+                    <div class="code-row">
+                        <input type="text" class="form-control" id="regCodeModal" placeholder="请输入6位验证码" maxlength="6">
+                        <button type="button" class="send-code-btn" id="verifyCodeModalBtn">验证</button>
+                    </div>
+                    <div class="form-hint" id="regCodeHintModal" style="color:#f5b042;">注册成功后验证码会显示在这里</div>
+                </div>
                 <button type="submit" class="btn-primary" id="regBtnModal">注 册</button>
             </form>
             <div class="auth-footer-links">
@@ -384,22 +370,7 @@
             <div class="auth-footer-links">
                 <a id="profileCloseModal" style="cursor:pointer;">关闭</a>
                 <span class="sep">·</span>
-                <a id="switchToAdminPanel" style="cursor:pointer; color:var(--accent-gold); display:none; font-weight:700;">🛡 管理面板</a>
-            </div>
-        </div>
-
-        <!-- ====== 管理员控制面板 ====== -->
-        <div id="adminPanelView" class="auth-view" style="display:none;">
-            <div class="modal-sub">🛡 <span>管理员控制面板</span></div>
-            <div style="margin-bottom:12px; display:flex; gap:8px;">
-                <input type="text" class="form-control" id="adminSearchInput" placeholder="搜索用户邮箱..." style="flex:1;">
-                <button class="btn-secondary btn-sm" id="adminRefreshBtn" style="width:auto; flex-shrink:0;">刷新</button>
-            </div>
-            <div style="max-height:350px; overflow-y:auto; margin-bottom:12px;" id="adminUserList">
-                <p style="text-align:center; color:var(--text-dim); padding:20px;">加载中...</p>
-            </div>
-            <div class="auth-footer-links">
-                <a id="adminBackToProfile" style="cursor:pointer;">← 返回个人中心</a>
+                <a id="switchToAdminPanel" href="admin.html" style="color:var(--accent-gold); display:none; font-weight:700; text-decoration:none;">🛡 管理面板</a>
             </div>
         </div>
     </div>
@@ -573,14 +544,12 @@
         const registerView = document.getElementById('registerView');
         const forgotView = document.getElementById('forgotView');
         const profileView = document.getElementById('profileView');
-        const adminPanelView = document.getElementById('adminPanelView');
 
         function showAuthView(viewName) {
             loginView.style.display = viewName === 'login' ? 'block' : 'none';
             registerView.style.display = viewName === 'register' ? 'block' : 'none';
             forgotView.style.display = viewName === 'forgot' ? 'block' : 'none';
             profileView.style.display = viewName === 'profile' ? 'block' : 'none';
-            adminPanelView.style.display = viewName === 'admin' ? 'block' : 'none';
             if (viewName === 'profile') loadProfileModal();
         }
 
@@ -678,10 +647,42 @@
 
             try {
                 const data = await apiCall('register', { email, password: pwd });
-                showToast(data.message || '注册成功！请检查邮箱并点击确认链接', 'success');
+                // 显示验证码
+                document.getElementById('regCodeGroupModal').style.display = 'block';
+                document.getElementById('regCodeHintModal').textContent = '验证码：' + data.code + '（10分钟内有效）';
+                document.getElementById('regCodeHintModal').style.color = '#f5b042';
+                document.getElementById('regCodeModal').value = data.code;
+                document.getElementById('regCodeModal').focus();
+                document.getElementById('regPasswordModal').value = '';
+                document.getElementById('regPasswordConfirmModal').value = '';
+                showToast(data.message || '注册成功，请输入验证码', 'success');
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        });
+
+        // ---- 验证码校验 ----
+        document.getElementById('verifyCodeModalBtn').addEventListener('click', async function() {
+            const email = document.getElementById('regEmailModal').value.trim();
+            const code = document.getElementById('regCodeModal').value.trim();
+
+            if (!email || !code) {
+                showToast('请输入验证码', 'error');
+                return;
+            }
+            if (code.length !== 6) {
+                showToast('请输入6位验证码', 'error');
+                return;
+            }
+
+            try {
+                const data = await apiCall('verify-email', { email, code });
+                showToast(data.message || '✅ 验证成功！', 'success');
+                // 切回登录页
+                document.getElementById('regCodeGroupModal').style.display = 'none';
+                document.getElementById('registerFormModal').reset();
                 showAuthView('login');
                 document.getElementById('loginEmailModal').value = email;
-                document.getElementById('registerFormModal').reset();
             } catch (err) {
                 showToast(err.message, 'error');
             }
@@ -727,7 +728,7 @@
                 document.getElementById('profileNewPwdModal').value = '';
                 document.getElementById('profileNewPwdConfirmModal').value = '';
                 // 管理面板入口：数据库角色 或 环境变量兜底
-                const staffRoles = ['super_admin', 'admin', 'moderator'];
+                const staffRoles = ['super_admin', 'admin'];
                 const adminEmails = (localStorage.getItem('lt_admin_emails') || '').split(',').map(e => e.trim().toLowerCase());
                 const isStaff = staffRoles.includes(user.role) || adminEmails.includes(user.email.toLowerCase());
                 document.getElementById('switchToAdminPanel').style.display = isStaff ? 'inline' : 'none';
@@ -839,8 +840,8 @@
                     if (data.user) {
                         localStorage.setItem('lt_user', JSON.stringify(data.user));
                         updateAuthButton(true);
-                        // 版主及以上 或 兜底邮箱
-                        const staffRoles = ['super_admin', 'admin', 'moderator'];
+                        // 管理员及以上 或 兜底邮箱
+                        const staffRoles = ['super_admin', 'admin'];
                         const adminEmails = (localStorage.getItem('lt_admin_emails') || '').split(',').map(e => e.trim().toLowerCase());
                         if (staffRoles.includes(data.user.role) || adminEmails.includes(data.user.email.toLowerCase())) {
                             document.getElementById('switchToAdminPanel').style.display = 'inline';
@@ -860,165 +861,6 @@
                 updateAuthButton(false);
             }
         })();
-
-        // ============================================================
-        //  管理员控制面板（多角色权限系统）
-        // ============================================================
-        const adminUserList = document.getElementById('adminUserList');
-        const adminSearchInput = document.getElementById('adminSearchInput');
-        let adminOperatorRole = 'user';  // 当前操作者的角色
-
-        // 角色中文名 & 颜色映射
-        const ROLE_LABELS = {
-            'super_admin': '超级管理员',
-            'admin': '管理员',
-            'moderator': '版主',
-            'user': '用户'
-        };
-        const ROLE_COLORS = {
-            'super_admin': '#e6a23c',
-            'admin': '#2c9cf0',
-            'moderator': '#67c23a',
-            'user': '#909399'
-        };
-
-        // 切换到管理面板
-        document.getElementById('switchToAdminPanel').addEventListener('click', () => {
-            showAuthView('admin');
-            loadAdminUsers();
-        });
-
-        // 返回个人中心
-        document.getElementById('adminBackToProfile').addEventListener('click', () => {
-            showAuthView('profile');
-        });
-
-        // 搜索
-        adminSearchInput.addEventListener('input', function() {
-            loadAdminUsers(this.value.trim());
-        });
-
-        // 刷新
-        document.getElementById('adminRefreshBtn').addEventListener('click', () => {
-            loadAdminUsers(adminSearchInput.value.trim());
-        });
-
-        async function loadAdminUsers(search) {
-            adminUserList.innerHTML = '<p style="text-align:center;color:var(--text-dim);padding:20px;">加载中...</p>';
-            const token = localStorage.getItem('lt_token');
-            try {
-                let url = `${API_BASE}/admin/users`;
-                if (search) url += '?search=' + encodeURIComponent(search);
-                const res = await fetch(url, {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message || '加载失败');
-
-                adminOperatorRole = data.operator_role || 'user';
-
-                if (data.users.length === 0) {
-                    adminUserList.innerHTML = '<p style="text-align:center;color:var(--text-dim);padding:20px;">没有找到用户</p>';
-                    return;
-                }
-
-                // 当前操作者能管理的角色列表
-                const canManage = {
-                    'super_admin': ['admin', 'moderator', 'user'],
-                    'admin': ['moderator', 'user'],
-                    'moderator': [],
-                    'user': []
-                }[adminOperatorRole] || [];
-
-                adminUserList.innerHTML = data.users.map(u => {
-                    const roleLabel = ROLE_LABELS[u.role] || u.role;
-                    const roleColor = ROLE_COLORS[u.role] || '#909399';
-                    const canEdit = canManage.includes(u.role);
-                    const canDelete = (adminOperatorRole === 'super_admin' || adminOperatorRole === 'admin') && u.role !== 'super_admin';
-                    const isSelf = (JSON.parse(localStorage.getItem('lt_user') || '{}').id === u.id);
-
-                    // 角色选择器
-                    let roleSelect = '';
-                    if (canEdit && !isSelf) {
-                        const options = canManage.map(r =>
-                            `<option value="${r}" ${u.role === r ? 'selected' : ''}>${ROLE_LABELS[r]}</option>`
-                        ).join('');
-                        roleSelect = `<select class="admin-role-select" onchange="window._adminSetRole('${u.id}','${u.email}',this.value)" style="padding:3px 8px;border-radius:20px;border:1px solid var(--glass-border);background:var(--input-bg);color:var(--text-main);font-size:0.7rem;cursor:pointer;">
-                            ${options}
-                        </select>`;
-                    } else {
-                        roleSelect = `<span class="admin-badge" style="background:${roleColor};color:#fff;">${roleLabel}</span>`;
-                    }
-
-                    // 删除按钮
-                    let deleteBtn = '';
-                    if (canDelete && !isSelf && u.role !== 'super_admin') {
-                        deleteBtn = `<button class="admin-btn-sm danger" onclick="window._adminDelete('${u.id}','${u.email}')">删除</button>`;
-                    }
-
-                    return `
-                    <div class="admin-user-item">
-                        <div class="admin-user-info">
-                            <div class="admin-user-email">${u.email} ${isSelf ? '<span style="font-size:0.65rem;opacity:0.6;">(你)</span>' : ''}</div>
-                            <div class="admin-user-meta">
-                                ${u.email_confirmed ? '<span class="admin-badge confirmed">✓已验证</span>' : '<span class="admin-badge unconfirmed">✗未验证</span>'}
-                                ${roleSelect}
-                                · ${new Date(u.created_at).toLocaleDateString('zh-CN')}
-                            </div>
-                        </div>
-                        <div class="admin-user-actions">
-                            ${deleteBtn}
-                        </div>
-                    </div>`;
-                }).join('');
-            } catch (err) {
-                adminUserList.innerHTML = `<p style="text-align:center;color:#f56c6c;padding:20px;">${err.message}</p>`;
-            }
-        }
-
-        // 通过下拉框设置角色
-        window._adminSetRole = async function(userId, email, role) {
-            const roleLabel = ROLE_LABELS[role] || role;
-            if (!confirm(`确认将 ${email} 的角色设为「${roleLabel}」？`)) {
-                loadAdminUsers(adminSearchInput.value.trim()); // 还原下拉框
-                return;
-            }
-            const token = localStorage.getItem('lt_token');
-            try {
-                const res = await fetch(`${API_BASE}/admin/set-role`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ userId, role })
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message);
-                showToast(data.message, 'success');
-                loadAdminUsers(adminSearchInput.value.trim());
-            } catch (err) {
-                showToast(err.message, 'error');
-                loadAdminUsers(adminSearchInput.value.trim());
-            }
-        };
-
-        // 删除用户
-        window._adminDelete = async function(userId, email) {
-            if (!confirm(`⚠️ 确定要永久删除用户 ${email} 吗？此操作不可撤销！`)) return;
-            const token = localStorage.getItem('lt_token');
-            try {
-                const res = await fetch(`${API_BASE}/admin/delete-user`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ userId })
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message);
-                showToast(data.message, 'success');
-                loadAdminUsers(adminSearchInput.value.trim());
-            } catch (err) {
-                showToast(err.message, 'error');
-            }
-        };
-
         console.log('❄ 灯雪镇 · 账号系统已加载，后端 API:', API_BASE);
     })();
 </script>

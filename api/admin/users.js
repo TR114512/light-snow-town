@@ -3,8 +3,8 @@ const { supabase, jsonRes, handleOptions, requireRole } = require('../_utils');
 module.exports = async (req, res) => {
     if (handleOptions(req, res)) return;
 
-    // moderator 及以上可查看用户列表
-    const operator = await requireRole(req, res, 'moderator');
+    // admin 及以上可查看用户列表
+    const operator = await requireRole(req, res, 'admin');
     if (!operator) return;
 
     try {

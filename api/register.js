@@ -13,12 +13,12 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // Supabase signUp 会自动发送确认邮件（无需自己写 SMTP）
+        // Supabase 创建用户（同时自动发确认链接邮件）
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
-                emailRedirectTo: process.env.SITE_URL || 'https://tr114512.github.io/light-snow-town/'
+                emailRedirectTo: process.env.SITE_URL || '/'
             }
         });
 
@@ -27,8 +27,20 @@ module.exports = async (req, res) => {
             return jsonRes(res, 400, { message: error.message });
         }
 
+        // 生成6位验证码（无需等邮件，直接页面显示）
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10分钟有效
+
+        await supabase.from('verification_codes').insert({
+            user_id: data.user.id,
+            code: code,
+            type: 'email_verify',
+            expires_at: expiresAt.toISOString()
+        });
+
         jsonRes(res, 200, {
-            message: '注册成功！请检查邮箱并点击确认链接完成激活',
+            message: '注册成功！请输入下方验证码完成激活',
+            code: code,  // 直接返回验证码，页面上显示
             user: { email: data.user.email, id: data.user.id }
         });
     } catch (err) {

@@ -42,38 +42,46 @@ function handleOptions(req, res) {
 // 角色层级（数字越大权限越高）
 const ROLE_LEVEL = {
     'user':       0,
-    'moderator':  1,
     'admin':      2,
     'super_admin': 3
 };
 
-// 角色可管理的下级角色（只能管理比自己层级低的）
+// 角色可管理的下级角色
 const ROLE_CAN_MANAGE = {
-    'super_admin': ['admin', 'moderator', 'user'],
-    'admin':       ['moderator', 'user'],
-    'moderator':   [],
+    'super_admin': ['admin', 'user'],
+    'admin':       ['user'],
     'user':        []
 };
 
 // 权限对应的最低角色要求
 const PERMISSION_ROLE = {
-    'users.list':    'moderator',
+    'users.list':    'admin',
     'users.set_role': 'admin',
     'users.delete':  'admin',
     'admins.manage': 'super_admin'
 };
 
-// 从 profiles 表查角色，失败则回退到环境变量
+// 从 profiles 表 + user_metadata 查角色，失败则回退到环境变量
 async function getUserRole(userId, email) {
     try {
+        // 1. 先查 profiles 表
         const { data, error } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', userId)
             .single();
         if (!error && data && data.role) return data.role;
-    } catch (_) { /* 回退 */ }
+    } catch (_) { /* 继续 */ }
 
+    try {
+        // 2. 再查 user_metadata（set-role 双写在这里）
+        const { data: { user }, error: ue } = await supabase.auth.admin.getUserById(userId);
+        if (!ue && user && user.user_metadata && user.user_metadata.role) {
+            return user.user_metadata.role;
+        }
+    } catch (_) { /* 继续 */ }
+
+    // 3. 环境变量兜底
     const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
     if (adminEmails.includes((email || '').toLowerCase())) return 'super_admin';
     return 'user';
