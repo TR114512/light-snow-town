@@ -1,10 +1,4 @@
-const {
-    supabase,
-    jsonRes,
-    handleOptions,
-    sendVerificationEmail,
-    saveVerificationCode
-} = require('./_utils');
+const { supabase, jsonRes, handleOptions } = require('./_utils');
 
 module.exports = async (req, res) => {
     if (handleOptions(req, res)) return;
@@ -19,18 +13,22 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        // Supabase signUp 会自动发送确认邮件（无需自己写 SMTP）
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                emailRedirectTo: process.env.SITE_URL || 'https://tr114512.github.io/light-snow-town/'
+            }
+        });
+
         if (error) {
             console.error('Supabase signUp error:', error);
             return jsonRes(res, 400, { message: error.message });
         }
 
-        const code = String(Math.floor(100000 + Math.random() * 900000));
-        await saveVerificationCode(data.user.id, code, 'email_verification');
-        await sendVerificationEmail(email, code);
-
         jsonRes(res, 200, {
-            message: '注册成功，验证码已发送至您的邮箱',
+            message: '注册成功！请检查邮箱并点击确认链接完成激活',
             user: { email: data.user.email, id: data.user.id }
         });
     } catch (err) {

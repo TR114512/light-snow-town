@@ -13,8 +13,9 @@ module.exports = async (req, res) => {
     }
 
     try {
+        const siteUrl = process.env.SITE_URL || 'https://tr114512.github.io/light-snow-town/';
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: 'https://tr114512.github.io/light-snow-town/index.html?reset=true'
+            redirectTo: siteUrl + '?reset=true'
         });
 
         if (error) {

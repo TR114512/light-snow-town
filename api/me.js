@@ -1,4 +1,4 @@
-const { supabase, jsonRes, handleOptions } = require('./_utils');
+const { supabase, jsonRes, handleOptions, getUserRole } = require('./_utils');
 const jwt = require('jsonwebtoken');
 
 module.exports = async (req, res) => {
@@ -16,10 +16,12 @@ module.exports = async (req, res) => {
         if (error || !user) {
             return jsonRes(res, 404, { message: '用户不存在' });
         }
+        const role = await getUserRole(user.id, user.email);
         jsonRes(res, 200, {
             user: {
                 email: user.email,
                 id: user.id,
+                role: role,
                 created_at: user.created_at,
                 email_confirmed_at: user.email_confirmed_at
             }

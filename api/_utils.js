@@ -1,6 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -33,47 +32,92 @@ function handleOptions(req, res) {
     return false;
 }
 
-// ===== 邮件发送（使用你的 QQ 邮箱） =====
-const transporter = nodemailer.createTransport({
-    host: 'smtp.qq.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+// 注意：邮件发送完全由 Supabase Auth 接管
+// - 注册确认邮件：Supabase signUp() 自动发送
+// - 密码重置邮件：Supabase resetPasswordForEmail() 自动发送
+// 无需配置 EMAIL_USER / EMAIL_PASS 环境变量
+
+// ===== 角色权限系统 =====
+
+// 角色层级（数字越大权限越高）
+const ROLE_LEVEL = {
+    'user':       0,
+    'moderator':  1,
+    'admin':      2,
+    'super_admin': 3
+};
+
+// 角色可管理的下级角色（只能管理比自己层级低的）
+const ROLE_CAN_MANAGE = {
+    'super_admin': ['admin', 'moderator', 'user'],
+    'admin':       ['moderator', 'user'],
+    'moderator':   [],
+    'user':        []
+};
+
+// 权限对应的最低角色要求
+const PERMISSION_ROLE = {
+    'users.list':    'moderator',
+    'users.set_role': 'admin',
+    'users.delete':  'admin',
+    'admins.manage': 'super_admin'
+};
+
+// 从 profiles 表查角色，失败则回退到环境变量
+async function getUserRole(userId, email) {
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .single();
+        if (!error && data && data.role) return data.role;
+    } catch (_) { /* 回退 */ }
+
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+    if (adminEmails.includes((email || '').toLowerCase())) return 'super_admin';
+    return 'user';
+}
+
+// 检查用户是否拥有某权限
+async function hasPermission(userId, email, permission) {
+    const requiredRole = PERMISSION_ROLE[permission];
+    if (!requiredRole) return false;
+    const userRole = await getUserRole(userId, email);
+    return ROLE_LEVEL[userRole] >= ROLE_LEVEL[requiredRole];
+}
+
+// 检查操作者能否管理目标用户的角色
+function canManageRole(operatorRole, targetRole) {
+    const allowedRoles = ROLE_CAN_MANAGE[operatorRole] || [];
+    return allowedRoles.includes(targetRole);
+}
+
+// 通用鉴权中间件，需要至少某角色
+async function requireRole(req, res, minRole) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        jsonRes(res, 401, { message: '未登录' });
+        return null;
     }
-});
-
-async function sendVerificationEmail(email, code) {
-    await transporter.sendMail({
-        from: `"灯雪镇" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: '【灯雪镇】邮箱验证码',
-        html: `<p>您的验证码是：<strong>${code}</strong>，5分钟内有效。</p><p>请勿将验证码透露给他人。</p>`
-    });
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = jwt.verify(token, jwtSecret);
+        const role = await getUserRole(decoded.id, decoded.email);
+        if (ROLE_LEVEL[role] < ROLE_LEVEL[minRole]) {
+            jsonRes(res, 403, { message: `需要 ${minRole} 或更高权限` });
+            return null;
+        }
+        return { ...decoded, role };
+    } catch (e) {
+        jsonRes(res, 401, { message: 'Token 无效' });
+        return null;
+    }
 }
 
-// ===== 验证码存储与校验 =====
-async function saveVerificationCode(userId, code, type) {
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-    const { error } = await supabase
-        .from('verification_codes')
-        .insert({ user_id: userId, code, type, expires_at: expiresAt.toISOString() });
-    if (error) throw error;
-}
-
-async function verifyAndDeleteCode(userId, code, type) {
-    const { data, error } = await supabase
-        .from('verification_codes')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('code', code)
-        .eq('type', type)
-        .gt('expires_at', new Date().toISOString())
-        .single();
-    if (error || !data) return false;
-    await supabase.from('verification_codes').delete().eq('id', data.id);
-    return true;
+// 兼容旧代码
+async function requireAdmin(req, res) {
+    return requireRole(req, res, 'admin');
 }
 
 module.exports = {
@@ -81,7 +125,11 @@ module.exports = {
     signToken,
     jsonRes,
     handleOptions,
-    sendVerificationEmail,
-    saveVerificationCode,
-    verifyAndDeleteCode
+    getUserRole,
+    requireAdmin,
+    requireRole,
+    hasPermission,
+    canManageRole,
+    ROLE_LEVEL,
+    ROLE_CAN_MANAGE
 };

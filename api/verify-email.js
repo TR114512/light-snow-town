@@ -1,9 +1,4 @@
-const {
-    supabase,
-    jsonRes,
-    handleOptions,
-    verifyAndDeleteCode
-} = require('./_utils');
+const { supabase, jsonRes, handleOptions } = require('./_utils');
 
 module.exports = async (req, res) => {
     if (handleOptions(req, res)) return;
@@ -12,39 +7,28 @@ module.exports = async (req, res) => {
         return jsonRes(res, 405, { message: 'Method not allowed' });
     }
 
-    const { email, code } = req.body;
-    if (!email || !code) {
-        return jsonRes(res, 400, { message: '请提供邮箱和验证码' });
+    const { email } = req.body;
+    if (!email) {
+        return jsonRes(res, 400, { message: '请提供邮箱' });
     }
 
     try {
-        // 根据邮箱获取用户 ID
-        const { data: user, error: userError } = await supabase
-            .from('auth.users')
-            .select('id')
-            .eq('email', email)
-            .single();
+        // 通过 Supabase Admin API 查找用户并检查邮箱确认状态
+        const { data: users, error: listError } = await supabase.auth.admin.listUsers();
+        if (listError) {
+            return jsonRes(res, 500, { message: listError.message });
+        }
 
-        if (userError || !user) {
+        const user = users.users.find(u => u.email === email);
+        if (!user) {
             return jsonRes(res, 404, { message: '用户不存在' });
         }
 
-        const isValid = await verifyAndDeleteCode(user.id, code, 'email_verification');
-        if (!isValid) {
-            return jsonRes(res, 400, { message: '验证码无效或已过期' });
+        if (user.email_confirmed_at) {
+            jsonRes(res, 200, { message: '邮箱已确认', confirmed: true });
+        } else {
+            jsonRes(res, 200, { message: '邮箱尚未确认，请检查邮箱点击确认链接', confirmed: false });
         }
-
-        // 更新邮箱确认状态
-        const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
-            email_confirm: true
-        });
-
-        if (updateError) {
-            console.error('Update error:', updateError);
-            return jsonRes(res, 400, { message: updateError.message });
-        }
-
-        jsonRes(res, 200, { message: '邮箱验证成功' });
     } catch (err) {
         console.error('Unexpected error:', err);
         jsonRes(res, 500, { message: '服务器内部错误' });
