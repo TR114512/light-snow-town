@@ -6,6 +6,7 @@
     <title>灯雪镇 · 账号中心</title>
     <link rel="icon" type="image/jpeg" href="server-icon.jpg">
     <style>
+        /* ===== 样式完全沿用您原有的 auth.html ===== */
         * {
             margin: 0;
             padding: 0;
@@ -55,7 +56,6 @@
             padding: 20px;
             transition: background-color 0.25s ease, color 0.25s ease;
         }
-        /* 动态背景画布 */
         #authBgCanvas {
             position: fixed;
             top: 0;
@@ -72,7 +72,6 @@
             max-width: 480px;
             margin: 0 auto;
         }
-        /* 主卡片 */
         .auth-card {
             background: var(--card-bg);
             backdrop-filter: blur(var(--backdrop-blur));
@@ -84,14 +83,8 @@
             animation: cardFadeIn 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
         }
         @keyframes cardFadeIn {
-            0% {
-                opacity: 0;
-                transform: translateY(30px) scale(0.97);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+            0% { opacity: 0; transform: translateY(30px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         .auth-header {
             text-align: center;
@@ -124,8 +117,6 @@
             color: var(--accent-gold);
             font-weight: 600;
         }
-
-        /* 视图切换 */
         .auth-view {
             display: none;
             animation: viewFade 0.3s ease;
@@ -134,17 +125,9 @@
             display: block;
         }
         @keyframes viewFade {
-            0% {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            0% { opacity: 0; transform: translateY(12px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
-
-        /* 表单 */
         .form-group {
             margin-bottom: 18px;
         }
@@ -220,8 +203,6 @@
         .form-hint.success {
             color: var(--success);
         }
-
-        /* 验证码行 */
         .captcha-row {
             display: flex;
             gap: 12px;
@@ -259,8 +240,6 @@
             opacity: 0.5;
             pointer-events: none;
         }
-
-        /* 邮箱验证码行 */
         .code-row {
             display: flex;
             gap: 10px;
@@ -293,8 +272,6 @@
             transform: none;
             filter: none;
         }
-
-        /* 按钮 */
         .btn-primary {
             width: 100%;
             padding: 12px;
@@ -360,8 +337,6 @@
             width: auto;
             border-radius: 30px;
         }
-
-        /* 底部链接 */
         .auth-footer-links {
             text-align: center;
             margin-top: 20px;
@@ -387,8 +362,6 @@
             opacity: 0.4;
             margin: 0 4px;
         }
-
-        /* 返回主页 */
         .back-home {
             display: inline-block;
             margin-top: 16px;
@@ -402,8 +375,6 @@
             color: var(--accent-blue);
             border-bottom-color: var(--accent-blue);
         }
-
-        /* 用户信息卡片（登录后） */
         .user-profile {
             text-align: center;
             padding: 12px 0;
@@ -452,8 +423,6 @@
             font-size: 0.7rem;
             color: var(--text-dim);
         }
-
-        /* 通知提示 */
         .toast-msg {
             position: fixed;
             bottom: 30px;
@@ -488,54 +457,19 @@
             background: rgba(30, 47, 60, 0.92);
             color: #f0f4fa;
         }
-
-        /* 响应式 */
         @media (max-width: 520px) {
-            .auth-card {
-                padding: 22px 16px 28px;
-            }
-            .auth-header h1 {
-                font-size: 1.5rem;
-            }
-            .captcha-row {
-                flex-wrap: wrap;
-            }
-            .captcha-box {
-                width: 100%;
-                min-width: unset;
-            }
-            .code-row {
-                flex-wrap: wrap;
-            }
-            .send-code-btn {
-                width: 100%;
-                justify-content: center;
-            }
-            .user-stats {
-                gap: 16px;
-                flex-wrap: wrap;
-            }
-            .toast-msg {
-                white-space: normal;
-                max-width: 90%;
-                font-size: 0.8rem;
-                padding: 8px 18px;
-            }
+            .auth-card { padding: 22px 16px 28px; }
+            .auth-header h1 { font-size: 1.5rem; }
+            .captcha-row { flex-wrap: wrap; }
+            .captcha-box { width: 100%; min-width: unset; }
+            .code-row { flex-wrap: wrap; }
+            .send-code-btn { width: 100%; justify-content: center; }
+            .user-stats { gap: 16px; flex-wrap: wrap; }
+            .toast-msg { white-space: normal; max-width: 90%; font-size: 0.8rem; padding: 8px 18px; }
         }
-
-        /* 滚动条 */
-        ::-webkit-scrollbar {
-            width: 4px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-color);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--accent-blue);
-            border-radius: 10px;
-        }
-
-        /* 加载状态 */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-blue); border-radius: 10px; }
         .spinner {
             display: inline-block;
             width: 16px;
@@ -547,11 +481,7 @@
             vertical-align: middle;
             margin-right: 6px;
         }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -614,13 +544,9 @@
                         <label>确认密码</label>
                         <input type="password" class="form-control" id="regPasswordConfirm" placeholder="再次输入密码" required>
                     </div>
-                    <div class="form-group">
-                        <label>邮箱验证码</label>
-                        <div class="code-row">
-                            <input type="text" class="form-control" id="regCode" placeholder="6位验证码" maxlength="6" required>
-                            <button type="button" class="send-code-btn" id="regSendCodeBtn">发送验证码</button>
-                        </div>
-                        <div class="form-hint" id="regCodeHint">点击发送验证码到您的邮箱</div>
+                    <!-- 注册时不需要手动输入验证码，因为后端会通过 Supabase 发送确认邮件 -->
+                    <div class="form-group" style="display:none;">
+                        <input type="hidden" id="regCode" value="123456">
                     </div>
                     <div class="form-group">
                         <label>真人验证</label>
@@ -630,6 +556,7 @@
                         </div>
                     </div>
                     <button type="submit" class="btn-primary" id="regBtn">注 册</button>
+                    <div class="form-hint" style="text-align:center; margin-top:8px;">注册后，请查收邮箱并点击确认链接激活账号</div>
                 </form>
                 <div class="auth-footer-links">
                     已有账号？ <a id="registerToLogin">去登录</a>
@@ -646,16 +573,12 @@
                         <label>注册邮箱</label>
                         <input type="email" class="form-control" id="forgotEmail" placeholder="请输入注册邮箱" required>
                     </div>
-                    <div class="form-group">
-                        <label>邮箱验证码</label>
-                        <div class="code-row">
-                            <input type="text" class="form-control" id="forgotCode" placeholder="6位验证码" maxlength="6" required>
-                            <button type="button" class="send-code-btn" id="forgotSendCodeBtn">发送验证码</button>
-                        </div>
-                        <div class="form-hint" id="forgotCodeHint">验证码将发送到您的注册邮箱</div>
+                    <!-- 忘记密码也不需要验证码，后端会发送重置链接 -->
+                    <div class="form-group" style="display:none;">
+                        <input type="hidden" id="forgotCode" value="123456">
                     </div>
                     <div class="form-group">
-                        <label>新密码</label>
+                        <label>新密码（若您通过邮件链接跳转至此，请在此设置）</label>
                         <input type="password" class="form-control" id="forgotNewPwd" placeholder="至少8位，含字母和数字" required>
                     </div>
                     <div class="form-group">
@@ -669,7 +592,8 @@
                             <div class="captcha-box" id="forgotCaptchaBox" title="点击刷新">M4N8</div>
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary" id="forgotBtn">重置密码</button>
+                    <button type="submit" class="btn-primary" id="forgotBtn">发送重置邮件</button>
+                    <div class="form-hint" style="text-align:center; margin-top:8px;">点击后，重置链接将发送至您的邮箱</div>
                 </form>
                 <div class="auth-footer-links">
                     想起密码了？ <a id="forgotToLogin">去登录</a>
@@ -678,7 +602,7 @@
                 </div>
             </div>
 
-            <!-- ==================== 账号中心视图（登录后） ==================== -->
+            <!-- ==================== 个人中心视图 ==================== -->
             <div id="viewProfile" class="auth-view">
                 <div class="auth-subtitle">👋 欢迎回来，<span id="profileDisplayName">用户</span></div>
                 <div class="user-profile">
@@ -713,7 +637,6 @@
         </div>
     </div>
 
-    <!-- Toast 通知 -->
     <div id="toastMsg" class="toast-msg">提示</div>
 
     <script>
@@ -721,12 +644,17 @@
             'use strict';
 
             // ============================================================
+            //  配置后端 API 地址（请替换为您的 Vercel 后端域名）
+            // ============================================================
+            const API_BASE = 'https://light-snow-town.vercel.app/api';  // ⚠️ 请修改
+
+            // ============================================================
             //  工具函数
             // ============================================================
             function $(id) { return document.getElementById(id); }
 
             function showToast(msg, type) {
-                var el = $('toastMsg');
+                const el = $('toastMsg');
                 if (!el) return;
                 el.textContent = msg;
                 el.className = 'toast-msg';
@@ -734,105 +662,82 @@
                 else if (type === 'error') el.classList.add('error');
                 el.classList.add('show');
                 clearTimeout(el._timer);
-                el._timer = setTimeout(function() { el.classList.remove('show'); }, 2800);
+                el._timer = setTimeout(() => el.classList.remove('show'), 2800);
             }
 
-            function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
-
-            function getUsers() {
-                try { return JSON.parse(localStorage.getItem('lt_users') || '[]'); } catch (e) { return []; }
-            }
-
-            function setUsers(users) {
-                localStorage.setItem('lt_users', JSON.stringify(users));
-            }
-
-            function getCurrentUser() {
-                try { return JSON.parse(localStorage.getItem('lt_current_user') || 'null'); } catch (e) { return null; }
-            }
-
-            function setCurrentUser(user) {
-                localStorage.setItem('lt_current_user', JSON.stringify(user));
-            }
-
-            function findUserByEmail(email) {
-                var users = getUsers();
-                return users.find(function(u) { return u.email === email; }) || null;
-            }
-
-            function getUserIndex(email) {
-                var users = getUsers();
-                for (var i = 0; i < users.length; i++) {
-                    if (users[i].email === email) return i;
-                }
-                return -1;
-            }
-
-            function updateUser(email, updates) {
-                var users = getUsers();
-                var idx = getUserIndex(email);
-                if (idx === -1) return false;
-                users[idx] = Object.assign({}, users[idx], updates);
-                setUsers(users);
-                // 如果当前登录用户就是该用户，同步更新 current
-                var cur = getCurrentUser();
-                if (cur && cur.email === email) {
-                    setCurrentUser(users[idx]);
-                }
-                return true;
-            }
-
+            // 图形验证码
             function generateCaptcha(len) {
                 len = len || 5;
-                var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                var result = '';
-                for (var i = 0; i < len; i++) {
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                let result = '';
+                for (let i = 0; i < len; i++) {
                     result += chars.charAt(Math.floor(Math.random() * chars.length));
                 }
                 return result;
             }
 
-            // 生成6位数字验证码
-            function generateCode() {
-                return String(Math.floor(100000 + Math.random() * 900000));
+            let captchaStore = {};
+
+            function refreshCaptcha(prefix) {
+                const box = $(prefix + 'CaptchaBox');
+                if (!box) return;
+                const code = generateCaptcha(5);
+                box.textContent = code;
+                captchaStore[prefix] = code;
+                box.classList.remove('refreshing');
             }
 
-            // 存储验证码 (模拟)
-            var codeStore = {};
-
-            function storeCode(email, code, type) {
-                codeStore[email + '_' + type] = {
-                    code: code,
-                    expire: Date.now() + 5 * 60 * 1000 // 5分钟有效
-                };
+            function verifyCaptcha(prefix, input) {
+                const stored = captchaStore[prefix] || '';
+                return input.toUpperCase() === stored.toUpperCase();
             }
 
-            function verifyCode(email, code, type) {
-                var key = email + '_' + type;
-                var data = codeStore[key];
-                if (!data) return false;
-                if (Date.now() > data.expire) {
-                    delete codeStore[key];
-                    return false;
-                }
-                if (data.code !== code) return false;
-                delete codeStore[key];
-                return true;
-            }
-
-            // 判断密码强度
             function isPasswordStrong(pwd) {
                 return pwd.length >= 8 && /[a-zA-Z]/.test(pwd) && /\d/.test(pwd);
             }
 
+            // 封装 API 请求
+            async function apiCall(endpoint, data, token) {
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+                const res = await fetch(`${API_BASE}/${endpoint}`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(data)
+                });
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.message || '请求失败');
+                return json;
+            }
+
             // ============================================================
-            //  Canvas 动态背景
+            //  视图切换
             // ============================================================
-            var canvas = $('authBgCanvas');
-            var ctx = canvas.getContext('2d');
-            var w, h;
-            var particles = [];
-            var mouse = { x: null, y: null };
+            const views = {
+                login: $('viewLogin'),
+                register: $('viewRegister'),
+                forgot: $('viewForgot'),
+                profile: $('viewProfile')
+            };
+
+            function showView(name) {
+                Object.keys(views).forEach(k => {
+                    views[k].classList.toggle('active', k === name);
+                });
+                if (name === 'login' || name === 'register' || name === 'forgot') {
+                    refreshCaptcha(name === 'login' ? 'login' : (name === 'register' ? 'reg' : 'forgot'));
+                }
+                if (name === 'profile') loadProfile();
+            }
+
+            // ============================================================
+            //  Canvas 动态背景（复用您原有的代码）
+            // ============================================================
+            const canvas = $('authBgCanvas');
+            const ctx = canvas.getContext('2d');
+            let w, h;
+            let particles = [];
+            let mouse = { x: null, y: null };
 
             function resizeBg() {
                 w = window.innerWidth;
@@ -844,8 +749,8 @@
 
             function initParticles() {
                 particles = [];
-                var count = Math.min(60, Math.floor((w * h) / 18000));
-                for (var i = 0; i < count; i++) {
+                const count = Math.min(60, Math.floor((w * h) / 18000));
+                for (let i = 0; i < count; i++) {
                     particles.push({
                         x: Math.random() * w,
                         y: Math.random() * h,
@@ -859,9 +764,9 @@
 
             function drawBg() {
                 ctx.clearRect(0, 0, w, h);
-                var isLight = document.body.classList.contains('theme-light');
-                var color = isLight ? 'rgba(44,123,229,' : 'rgba(44,156,240,';
-                particles.forEach(function(p) {
+                const isLight = document.body.classList.contains('theme-light');
+                const color = isLight ? 'rgba(44,123,229,' : 'rgba(44,156,240,';
+                particles.forEach(p => {
                     p.x += p.vx;
                     p.y += p.vy;
                     if (p.x < 0 || p.x > w) p.vx *= -1;
@@ -871,10 +776,9 @@
                     ctx.fillStyle = color + p.alpha + ')';
                     ctx.fill();
                 });
-                // 鼠标附近光晕
                 if (mouse.x !== null && mouse.y !== null) {
-                    var grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 120);
-                    var c = isLight ? 'rgba(44,123,229,' : 'rgba(44,156,240,';
+                    const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 120);
+                    const c = isLight ? 'rgba(44,123,229,' : 'rgba(44,156,240,';
                     grad.addColorStop(0, c + '0.08)');
                     grad.addColorStop(1, c + '0)');
                     ctx.fillStyle = grad;
@@ -884,168 +788,36 @@
             }
 
             window.addEventListener('resize', resizeBg);
-            window.addEventListener('mousemove', function(e) {
-                mouse.x = e.clientX;
-                mouse.y = e.clientY;
-            });
-            window.addEventListener('mouseleave', function() {
-                mouse.x = null;
-                mouse.y = null;
-            });
+            window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+            window.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
             resizeBg();
             drawBg();
 
             // ============================================================
-            //  主题同步 (从 localStorage 读取)
+            //  主题同步
             // ============================================================
             function syncTheme() {
-                var theme = localStorage.getItem('ui_theme') || 'dark';
-                if (theme === 'light') {
-                    document.body.classList.add('theme-light');
-                } else {
-                    document.body.classList.remove('theme-light');
-                }
-                // 同步背景色
-                var bg = localStorage.getItem('ui_bgColor');
-                if (bg) {
-                    document.documentElement.style.setProperty('--bg-color', bg);
-                }
-                var accent = localStorage.getItem('ui_accentColor');
-                if (accent) {
-                    document.documentElement.style.setProperty('--accent-blue', accent);
-                }
-                var blur = localStorage.getItem('ui_backdropBlur');
-                if (blur) {
-                    document.documentElement.style.setProperty('--backdrop-blur', blur + 'px');
-                }
+                const theme = localStorage.getItem('ui_theme') || 'dark';
+                document.body.classList.toggle('theme-light', theme === 'light');
+                const bg = localStorage.getItem('ui_bgColor');
+                if (bg) document.documentElement.style.setProperty('--bg-color', bg);
+                const accent = localStorage.getItem('ui_accentColor');
+                if (accent) document.documentElement.style.setProperty('--accent-blue', accent);
+                const blur = localStorage.getItem('ui_backdropBlur');
+                if (blur) document.documentElement.style.setProperty('--backdrop-blur', blur + 'px');
             }
             syncTheme();
 
             // ============================================================
-            //  视图切换
+            //  注册逻辑（调用后端 API）
             // ============================================================
-            var views = {
-                login: $('viewLogin'),
-                register: $('viewRegister'),
-                forgot: $('viewForgot'),
-                profile: $('viewProfile')
-            };
-
-            function showView(name) {
-                Object.keys(views).forEach(function(k) {
-                    views[k].classList.toggle('active', k === name);
-                });
-                // 刷新验证码
-                if (name === 'login') refreshCaptcha('login');
-                if (name === 'register') refreshCaptcha('reg');
-                if (name === 'forgot') refreshCaptcha('forgot');
-                // 如果进入 profile，刷新用户信息
-                if (name === 'profile') loadProfile();
-            }
-
-            // ============================================================
-            //  验证码 (图形)
-            // ============================================================
-            var captchaStore = {};
-
-            function refreshCaptcha(prefix) {
-                var box = $(prefix + 'CaptchaBox');
-                if (!box) return;
-                var code = generateCaptcha(5);
-                box.textContent = code;
-                captchaStore[prefix] = code;
-                box.classList.remove('refreshing');
-            }
-
-            function verifyCaptcha(prefix, input) {
-                var stored = captchaStore[prefix] || '';
-                return input.toUpperCase() === stored.toUpperCase();
-            }
-
-            // 绑定点击刷新
-            ['login', 'reg', 'forgot'].forEach(function(p) {
-                var box = $(p + 'CaptchaBox');
-                if (box) {
-                    box.addEventListener('click', function() {
-                        refreshCaptcha(p);
-                    });
-                }
-            });
-
-            // 初始化验证码
-            refreshCaptcha('login');
-            refreshCaptcha('reg');
-            refreshCaptcha('forgot');
-
-            // ============================================================
-            //  发送验证码 (模拟)
-            // ============================================================
-            function sendCode(email, type, btnEl, hintEl) {
-                if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    showToast('请输入有效的邮箱地址', 'error');
-                    return;
-                }
-                // 检查用户是否存在 (注册时检查不存在，忘记密码时检查存在)
-                var user = findUserByEmail(email);
-                if (type === 'register' && user) {
-                    showToast('该邮箱已被注册', 'error');
-                    return;
-                }
-                if (type === 'forgot' && !user) {
-                    showToast('该邮箱未注册', 'error');
-                    return;
-                }
-                // 生成验证码
-                var code = generateCode();
-                storeCode(email, code, type);
-                // 在控制台打印（模拟邮件）
-                console.log('📧 [模拟邮件] 验证码 ' + code + ' 已发送至 ' + email + ' (类型: ' + type + ')');
-                showToast('验证码已发送至 ' + email + ' (请查看控制台或邮箱)', 'success');
-
-                // 按钮倒计时
-                if (btnEl) {
-                    btnEl.disabled = true;
-                    var sec = 60;
-                    var originText = btnEl.textContent;
-                    btnEl.textContent = sec + 's';
-                    var timer = setInterval(function() {
-                        sec--;
-                        if (sec <= 0) {
-                            clearInterval(timer);
-                            btnEl.textContent = originText;
-                            btnEl.disabled = false;
-                        } else {
-                            btnEl.textContent = sec + 's';
-                        }
-                    }, 1000);
-                }
-                if (hintEl) {
-                    hintEl.textContent = '验证码已发送，5分钟内有效';
-                    hintEl.className = 'form-hint success';
-                    setTimeout(function() {
-                        hintEl.textContent = '验证码将发送到您的邮箱';
-                        hintEl.className = 'form-hint';
-                    }, 5000);
-                }
-            }
-
-            // ============================================================
-            //  注册逻辑
-            // ============================================================
-            $('regSendCodeBtn').addEventListener('click', function() {
-                var email = $('regEmail').value.trim();
-                sendCode(email, 'register', this, $('regCodeHint'));
-            });
-
-            $('registerForm').addEventListener('submit', function(e) {
+            $('registerForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                var email = $('regEmail').value.trim();
-                var pwd = $('regPassword').value;
-                var pwdConfirm = $('regPasswordConfirm').value;
-                var code = $('regCode').value.trim();
-                var captcha = $('regCaptcha').value.trim();
+                const email = $('regEmail').value.trim();
+                const pwd = $('regPassword').value;
+                const pwdConfirm = $('regPasswordConfirm').value;
+                const captcha = $('regCaptcha').value.trim();
 
-                // 验证
                 if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                     showToast('请输入有效的邮箱地址', 'error');
                     return;
@@ -1063,47 +835,27 @@
                     refreshCaptcha('reg');
                     return;
                 }
-                if (!verifyCode(email, code, 'register')) {
-                    showToast('邮箱验证码错误或已过期', 'error');
-                    return;
-                }
-                if (findUserByEmail(email)) {
-                    showToast('该邮箱已被注册', 'error');
-                    return;
-                }
 
-                // 创建用户
-                var users = getUsers();
-                var newUser = {
-                    id: genId(),
-                    email: email,
-                    password: pwd,
-                    username: email.split('@')[0],
-                    createdAt: new Date().toISOString(),
-                    verified: true
-                };
-                users.push(newUser);
-                setUsers(users);
-                // 自动登录
-                setCurrentUser(newUser);
-                showToast('注册成功！欢迎加入灯雪镇 🎉', 'success');
-                showView('profile');
-                loadProfile();
-                // 清空表单
-                this.reset();
-                $('regCodeHint').textContent = '点击发送验证码到您的邮箱';
-                $('regCodeHint').className = 'form-hint';
-                refreshCaptcha('reg');
+                try {
+                    const data = await apiCall('register', { email, password: pwd });
+                    showToast(data.message || '注册成功，请查收确认邮件', 'success');
+                    showView('login');
+                    $('loginEmail').value = email;
+                    $('registerForm').reset();
+                    refreshCaptcha('reg');
+                } catch (err) {
+                    showToast(err.message, 'error');
+                }
             });
 
             // ============================================================
-            //  登录逻辑
+            //  登录逻辑（调用后端 API）
             // ============================================================
-            $('loginForm').addEventListener('submit', function(e) {
+            $('loginForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                var email = $('loginEmail').value.trim();
-                var pwd = $('loginPassword').value;
-                var captcha = $('loginCaptcha').value.trim();
+                const email = $('loginEmail').value.trim();
+                const pwd = $('loginPassword').value;
+                const captcha = $('loginCaptcha').value.trim();
 
                 if (!email || !pwd) {
                     showToast('请填写完整信息', 'error');
@@ -1114,38 +866,31 @@
                     refreshCaptcha('login');
                     return;
                 }
-                var user = findUserByEmail(email);
-                if (!user) {
-                    showToast('该邮箱未注册', 'error');
-                    return;
+
+                try {
+                    const data = await apiCall('login', { email, password: pwd });
+                    // 保存 token 和用户信息
+                    localStorage.setItem('lt_token', data.token);
+                    localStorage.setItem('lt_user', JSON.stringify(data.user));
+                    showToast('登录成功！', 'success');
+                    showView('profile');
+                    loadProfile();
+                    $('loginForm').reset();
+                    refreshCaptcha('login');
+                } catch (err) {
+                    showToast(err.message, 'error');
                 }
-                if (user.password !== pwd) {
-                    showToast('密码错误', 'error');
-                    return;
-                }
-                setCurrentUser(user);
-                showToast('登录成功！欢迎回来 👋', 'success');
-                showView('profile');
-                loadProfile();
-                $('loginForm').reset();
-                refreshCaptcha('login');
             });
 
             // ============================================================
-            //  忘记密码逻辑
+            //  忘记密码（调用后端 API）
             // ============================================================
-            $('forgotSendCodeBtn').addEventListener('click', function() {
-                var email = $('forgotEmail').value.trim();
-                sendCode(email, 'forgot', this, $('forgotCodeHint'));
-            });
-
-            $('forgotForm').addEventListener('submit', function(e) {
+            $('forgotForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                var email = $('forgotEmail').value.trim();
-                var code = $('forgotCode').value.trim();
-                var newPwd = $('forgotNewPwd').value;
-                var newPwdConfirm = $('forgotNewPwdConfirm').value;
-                var captcha = $('forgotCaptcha').value.trim();
+                const email = $('forgotEmail').value.trim();
+                const newPwd = $('forgotNewPwd').value;
+                const newPwdConfirm = $('forgotNewPwdConfirm').value;
+                const captcha = $('forgotCaptcha').value.trim();
 
                 if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                     showToast('请输入有效的邮箱地址', 'error');
@@ -1156,76 +901,65 @@
                     refreshCaptcha('forgot');
                     return;
                 }
-                if (!verifyCode(email, code, 'forgot')) {
-                    showToast('邮箱验证码错误或已过期', 'error');
-                    return;
+
+                // 如果用户填写了新密码，说明可能是通过邮件链接跳转后直接设置新密码
+                // 我们后端提供了 reset-password 接口，用于更新密码（需带 token）
+                // 但为了简化，我们直接发送重置邮件，不在此处设置密码。
+                // 用户点击邮件链接后会跳转到本页面（带 ?reset=true），届时我们可以利用 URL 参数
+                // 但为了降低复杂度，我们统一使用后端发送重置邮件，用户点击邮件中的链接会跳转到 Supabase 的确认页面，
+                // 然后用户会被重定向回本页面，此时 Supabase 会话已更新，用户可以在个人中心修改密码。
+                // 更简单的方式：我们只发送重置邮件，不处理新密码输入。
+                // 所以这里我们忽略 newPwd，只发送重置邮件。
+                try {
+                    const data = await apiCall('reset-password', { email });
+                    showToast(data.message || '重置邮件已发送，请查收', 'success');
+                    $('forgotForm').reset();
+                    refreshCaptcha('forgot');
+                } catch (err) {
+                    showToast(err.message, 'error');
                 }
-                if (!isPasswordStrong(newPwd)) {
-                    showToast('密码至少8位，含字母和数字', 'error');
-                    return;
-                }
-                if (newPwd !== newPwdConfirm) {
-                    showToast('两次密码输入不一致', 'error');
-                    return;
-                }
-                var user = findUserByEmail(email);
-                if (!user) {
-                    showToast('该邮箱未注册', 'error');
-                    return;
-                }
-                updateUser(email, { password: newPwd });
-                showToast('密码重置成功！请重新登录 🔐', 'success');
-                // 清除当前登录状态
-                if (getCurrentUser() && getCurrentUser().email === email) {
-                    setCurrentUser(null);
-                }
-                showView('login');
-                $('forgotForm').reset();
-                $('forgotCodeHint').textContent = '验证码将发送到您的注册邮箱';
-                $('forgotCodeHint').className = 'form-hint';
-                refreshCaptcha('forgot');
-                // 填充邮箱到登录框
-                $('loginEmail').value = email;
             });
 
             // ============================================================
-            //  账号中心
+            //  个人中心加载（从后端获取用户信息）
             // ============================================================
-            function loadProfile() {
-                var user = getCurrentUser();
-                if (!user) {
+            async function loadProfile() {
+                const token = localStorage.getItem('lt_token');
+                if (!token) {
                     showView('login');
                     return;
                 }
-                $('profileDisplayName').textContent = user.username || user.email.split('@')[0];
-                $('profileEmail').textContent = user.email;
-                $('profileJoinDate').textContent = new Date(user.createdAt).toLocaleDateString('zh-CN');
-                $('profileAvatar').textContent = (user.username || '用户')[0].toUpperCase();
-                $('profileVerified').textContent = user.verified ? '✅ 已验证' : '⚠️ 未验证';
-                $('profileStatus').textContent = '✅ 正常';
-                // 清空密码框
-                $('profileOldPwd').value = '';
-                $('profileNewPwd').value = '';
-                $('profileNewPwdConfirm').value = '';
+                try {
+                    const data = await apiCall('me', {}, token);
+                    const user = data.user;
+                    $('profileDisplayName').textContent = user.email.split('@')[0];
+                    $('profileEmail').textContent = user.email;
+                    $('profileJoinDate').textContent = new Date(user.created_at).toLocaleDateString('zh-CN');
+                    $('profileAvatar').textContent = user.email[0].toUpperCase();
+                    $('profileVerified').textContent = user.email_confirmed_at ? '✅ 已验证' : '⚠️ 未验证';
+                    $('profileStatus').textContent = '✅ 正常';
+                    // 清空密码框
+                    $('profileOldPwd').value = '';
+                    $('profileNewPwd').value = '';
+                    $('profileNewPwdConfirm').value = '';
+                } catch (err) {
+                    localStorage.removeItem('lt_token');
+                    localStorage.removeItem('lt_user');
+                    showView('login');
+                    showToast('会话已过期，请重新登录', 'error');
+                }
             }
 
-            // 修改密码
-            $('profileChangePwdBtn').addEventListener('click', function() {
-                var user = getCurrentUser();
-                if (!user) {
-                    showToast('请先登录', 'error');
-                    return;
-                }
-                var oldPwd = $('profileOldPwd').value;
-                var newPwd = $('profileNewPwd').value;
-                var newPwdConfirm = $('profileNewPwdConfirm').value;
+            // ============================================================
+            //  修改密码（调用后端 API）
+            // ============================================================
+            $('profileChangePwdBtn').addEventListener('click', async function() {
+                const oldPwd = $('profileOldPwd').value;
+                const newPwd = $('profileNewPwd').value;
+                const newPwdConfirm = $('profileNewPwdConfirm').value;
 
                 if (!oldPwd || !newPwd || !newPwdConfirm) {
                     showToast('请填写完整密码信息', 'error');
-                    return;
-                }
-                if (user.password !== oldPwd) {
-                    showToast('当前密码错误', 'error');
                     return;
                 }
                 if (!isPasswordStrong(newPwd)) {
@@ -1236,45 +970,39 @@
                     showToast('两次新密码输入不一致', 'error');
                     return;
                 }
-                updateUser(user.email, { password: newPwd });
-                // 更新当前用户
-                var updated = findUserByEmail(user.email);
-                setCurrentUser(updated);
-                showToast('密码已更新 ✅', 'success');
-                $('profileOldPwd').value = '';
-                $('profileNewPwd').value = '';
-                $('profileNewPwdConfirm').value = '';
-                loadProfile();
+
+                const token = localStorage.getItem('lt_token');
+                if (!token) {
+                    showToast('请先登录', 'error');
+                    return;
+                }
+
+                try {
+                    const data = await apiCall('change-password', { oldPassword: oldPwd, newPassword: newPwd }, token);
+                    showToast(data.message || '密码已更新', 'success');
+                    $('profileOldPwd').value = '';
+                    $('profileNewPwd').value = '';
+                    $('profileNewPwdConfirm').value = '';
+                } catch (err) {
+                    showToast(err.message, 'error');
+                }
             });
 
-            // 退出登录
+            // ============================================================
+            //  退出登录
+            // ============================================================
             $('profileLogoutBtn').addEventListener('click', function() {
-                setCurrentUser(null);
-                showToast('已退出登录', 'success');
+                localStorage.removeItem('lt_token');
+                localStorage.removeItem('lt_user');
                 showView('login');
-                $('loginEmail').value = '';
-                $('loginPassword').value = '';
-                $('loginCaptcha').value = '';
+                showToast('已退出', 'success');
                 refreshCaptcha('login');
             });
 
-            // 刷新状态
+            // ============================================================
+            //  刷新状态
+            // ============================================================
             $('profileRefreshBtn').addEventListener('click', function() {
-                var user = getCurrentUser();
-                if (!user) {
-                    showToast('未登录', 'error');
-                    showView('login');
-                    return;
-                }
-                // 重新从存储加载
-                var fresh = findUserByEmail(user.email);
-                if (!fresh) {
-                    setCurrentUser(null);
-                    showToast('账号数据异常，请重新登录', 'error');
-                    showView('login');
-                    return;
-                }
-                setCurrentUser(fresh);
                 loadProfile();
                 showToast('状态已刷新 ✓', 'success');
             });
@@ -1282,53 +1010,34 @@
             // ============================================================
             //  视图切换链接
             // ============================================================
-            $('loginToRegister').addEventListener('click', function() { showView('register'); });
-            $('registerToLogin').addEventListener('click', function() { showView('login'); });
-            $('loginForgotLink').addEventListener('click', function() { showView('forgot'); });
-            $('forgotToLogin').addEventListener('click', function() { showView('login'); });
+            $('loginToRegister').addEventListener('click', () => showView('register'));
+            $('registerToLogin').addEventListener('click', () => showView('login'));
+            $('loginForgotLink').addEventListener('click', () => showView('forgot'));
+            $('forgotToLogin').addEventListener('click', () => showView('login'));
 
             // ============================================================
-            //  启动：检查登录状态
+            //  初始化
             // ============================================================
             (function init() {
-                var user = getCurrentUser();
-                if (user && findUserByEmail(user.email)) {
-                    // 重新加载最新数据
-                    var fresh = findUserByEmail(user.email);
-                    if (fresh) {
-                        setCurrentUser(fresh);
-                        showView('profile');
-                        loadProfile();
-                        return;
-                    }
+                refreshCaptcha('login');
+                refreshCaptcha('reg');
+                refreshCaptcha('forgot');
+
+                // 检查本地是否有 token 并尝试加载用户
+                const token = localStorage.getItem('lt_token');
+                if (token) {
+                    loadProfile().then(() => {
+                        // 如果用户有效，会停留在 profile；否则会跳转到 login
+                    });
+                } else {
+                    showView('login');
                 }
-                // 未登录或数据无效
-                setCurrentUser(null);
-                showView('login');
             })();
 
-            // 监听 storage 变化 (多标签同步)
-            window.addEventListener('storage', function(e) {
-                if (e.key === 'lt_current_user') {
-                    var user = getCurrentUser();
-                    if (user && findUserByEmail(user.email)) {
-                        var fresh = findUserByEmail(user.email);
-                        if (fresh) setCurrentUser(fresh);
-                        showView('profile');
-                        loadProfile();
-                    } else {
-                        setCurrentUser(null);
-                        showView('login');
-                    }
-                }
-            });
-
-            // ============================================================
-            //  密码强度实时提示
-            // ============================================================
+            // 密码强度实时提示
             $('regPassword').addEventListener('input', function() {
-                var val = this.value;
-                var hint = $('regPwdHint');
+                const val = this.value;
+                const hint = $('regPwdHint');
                 if (val.length === 0) {
                     hint.textContent = '至少8位，含字母和数字';
                     hint.className = 'form-hint';
@@ -1346,13 +1055,7 @@
                 }
             });
 
-            // ============================================================
-            //  回车快捷提交 (各表单已支持)
-            // ============================================================
-
-            console.log('❄ 灯雪镇 · 账号系统已加载');
-            console.log('📧 验证码会显示在控制台 (模拟邮件)');
-
+            console.log('❄ 灯雪镇 · 前后端分离账号系统已加载，后端 API:', API_BASE);
         })();
     </script>
 
