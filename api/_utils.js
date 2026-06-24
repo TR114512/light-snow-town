@@ -11,20 +11,21 @@ function signToken(userId, email) {
     return jwt.sign({ id: userId, email }, jwtSecret, { expiresIn: '7d' });
 }
 
-// 统一的 JSON 响应函数（自动添加 CORS 头）
-function jsonRes(res, status, data) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+// ===== CORS 统一处理 =====
+function setCorsHeaders(res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');  // 生产环境可改为具体域名
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
+
+function jsonRes(res, status, data) {
+    setCorsHeaders(res);
     res.status(status).json(data);
 }
 
-// 处理预检请求
 function handleOptions(req, res) {
     if (req.method === 'OPTIONS') {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        setCorsHeaders(res);
         res.status(200).end();
         return true;
     }

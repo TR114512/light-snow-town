@@ -1,32 +1,28 @@
-const { jsonRes, handleOptions } = require('./_utils');
+const { supabase, jsonRes, handleOptions } = require('./_utils');
 
 module.exports = async (req, res) => {
-    if (handleOptions(req, res)) return;  // 处理 OPTIONS 请求
-    // ... 原有逻辑
-};
+    // 处理 OPTIONS 预检请求
+    if (handleOptions(req, res)) return;
 
-module.exports = async (req, res) => {
-    if (req.method !== 'POST') return jsonRes(res, 405, { message: 'Method not allowed' });
+    if (req.method !== 'POST') {
+        return jsonRes(res, 405, { message: 'Method not allowed' });
+    }
+
     const { email, password } = req.body;
-
     if (!email || !password) {
         return jsonRes(res, 400, { message: '请填写完整' });
     }
 
-    // 使用 Supabase Auth 注册（会发送确认邮件）
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-            emailRedirectTo: 'https://tr114512.github.io/light-snow-town/auth.html' // 确认后跳转
-        }
+        options: { emailRedirectTo: 'https://tr114512.github.io/light-snow-town/index.html' } // 替换为您的真实前端地址
     });
 
     if (error) return jsonRes(res, 400, { message: error.message });
 
-    // 注册成功，返回用户信息（但未确认）
     jsonRes(res, 200, {
-        message: '注册成功，请查看邮箱并点击确认链接',
+        message: '注册成功，请查收确认邮件',
         user: { email: data.user.email, id: data.user.id }
     });
 };
