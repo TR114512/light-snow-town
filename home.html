@@ -384,7 +384,7 @@
             <div class="auth-footer-links">
                 <a id="profileCloseModal" style="cursor:pointer;">关闭</a>
                 <span class="sep">·</span>
-                <a id="switchToAdminPanel" style="cursor:pointer; color:var(--accent-gold); display:none;">🛡 管理面板</a>
+                <a id="switchToAdminPanel" style="cursor:pointer; color:var(--accent-gold); display:none; font-weight:700;">🛡 管理面板</a>
             </div>
         </div>
 
@@ -726,9 +726,12 @@
                 document.getElementById('profileOldPwdModal').value = '';
                 document.getElementById('profileNewPwdModal').value = '';
                 document.getElementById('profileNewPwdConfirmModal').value = '';
-                // 管理面板入口：版主及以上可见
+                // 管理面板入口：数据库角色 或 环境变量兜底
                 const staffRoles = ['super_admin', 'admin', 'moderator'];
-                document.getElementById('switchToAdminPanel').style.display = staffRoles.includes(user.role) ? 'inline' : 'none';
+                const adminEmails = (localStorage.getItem('lt_admin_emails') || '').split(',').map(e => e.trim().toLowerCase());
+                const isStaff = staffRoles.includes(user.role) || adminEmails.includes(user.email.toLowerCase());
+                document.getElementById('switchToAdminPanel').style.display = isStaff ? 'inline' : 'none';
+                console.log('🔑 角色:', user.role, '| 管理入口:', isStaff ? '显示' : '隐藏');
                 updateAuthButton(true);
             } catch (err) {
                 localStorage.removeItem('lt_token');
@@ -836,8 +839,10 @@
                     if (data.user) {
                         localStorage.setItem('lt_user', JSON.stringify(data.user));
                         updateAuthButton(true);
-                        // 版主及以上显示管理面板入口
-                        if (['super_admin', 'admin', 'moderator'].includes(data.user.role)) {
+                        // 版主及以上 或 兜底邮箱
+                        const staffRoles = ['super_admin', 'admin', 'moderator'];
+                        const adminEmails = (localStorage.getItem('lt_admin_emails') || '').split(',').map(e => e.trim().toLowerCase());
+                        if (staffRoles.includes(data.user.role) || adminEmails.includes(data.user.email.toLowerCase())) {
                             document.getElementById('switchToAdminPanel').style.display = 'inline';
                         }
                     } else {
