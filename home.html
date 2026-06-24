@@ -214,6 +214,7 @@
                 <span id="authBtnText">🔑 登录</span>
             </div>
             <div class="dev-btn" id="devBtn" aria-label="开发者信息" role="button" tabindex="0"><span class="dev-icon"></span> <span>开发者</span></div>
+            <a href="qa.html" style="text-decoration:none;"><div class="dev-btn" style="background:rgba(245,176,66,0.15);border-color:rgba(245,176,66,0.4);"><span>💬 问答</span></div></a>
             <div class="settings-icon-btn" id="settingsBtn" aria-label="打开设置面板" role="button" tabindex="0"><i class="custom-gear" aria-hidden="true"></i> <span>设置</span></div>
         </div>
     </div>
@@ -570,6 +571,13 @@
             forgotView.style.display = viewName === 'forgot' ? 'block' : 'none';
             profileView.style.display = viewName === 'profile' ? 'block' : 'none';
             if (viewName === 'profile') loadProfileModal();
+            // 切回注册页时恢复注册按钮
+            if (viewName === 'register') {
+                document.getElementById('regBtnModal').disabled = false;
+                document.getElementById('regBtnModal').textContent = '注 册';
+                document.getElementById('regBtnModal').style.opacity = '1';
+                document.getElementById('regCodeGroupModal').style.display = 'none';
+            }
         }
 
         function isPasswordStrong(pwd) {
@@ -685,6 +693,10 @@
                 document.getElementById('regCodeModal').focus();
                 document.getElementById('regPasswordModal').value = '';
                 document.getElementById('regPasswordConfirmModal').value = '';
+                // 禁用注册按钮，避免重复提交
+                document.getElementById('regBtnModal').disabled = true;
+                document.getElementById('regBtnModal').textContent = '已发送验证码';
+                document.getElementById('regBtnModal').style.opacity = '0.5';
                 showToast(data.message || '注册成功，请查收验证码邮件', 'success');
             } catch (err) {
                 showToast(err.message, 'error');
@@ -726,6 +738,10 @@
                 }
             } catch (err) {
                 showToast(err.message, 'error');
+                // 验证失败，恢复注册按钮
+                document.getElementById('regBtnModal').disabled = false;
+                document.getElementById('regBtnModal').textContent = '注 册';
+                document.getElementById('regBtnModal').style.opacity = '1';
             }
         });
 
