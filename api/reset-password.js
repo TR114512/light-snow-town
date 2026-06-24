@@ -5,7 +5,7 @@ module.exports = async (req, res) => {
     const { email } = req.body;
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://tr114512.github.io/auth.html?reset=true'
+        redirectTo: 'https://tr114512.github.io/light-snow-town/auth.html?reset=true'
     });
 
     if (error) return jsonRes(res, 400, { message: error.message });

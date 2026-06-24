@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
         email,
         password,
         options: {
-            emailRedirectTo: 'https://tr114512.github.io/auth.html' // 确认后跳转
+            emailRedirectTo: 'https://tr114512.github.io/light-snow-town/auth.html' // 确认后跳转
         }
     });
 
