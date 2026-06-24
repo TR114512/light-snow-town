@@ -565,10 +565,17 @@
                 headers: headers,
                 body: JSON.stringify(data)
             });
-            const json = await res.json();
+            const text = await res.text();
+            let json;
+            try {
+                json = JSON.parse(text);
+            } catch (_) {
+                console.error('非JSON响应:', text.substring(0, 200));
+                throw new Error('服务器返回异常（' + res.status + '），请检查 Vercel 环境变量是否已设置');
+            }
             if (!res.ok) {
                 console.error('API Error:', json);
-                throw new Error(json.message || JSON.stringify(json) || '请求失败');
+                throw new Error(json.message || json.error || '请求失败 (' + res.status + ')');
             }
             return json;
         }

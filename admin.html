@@ -99,6 +99,17 @@
     let operatorRole = 'user';
     let operatorEmail = '';
 
+    // ---- 安全 fetch（防 HTML 响应崩 JSON 解析） ----
+    async function safeFetch(url, opts){
+        const res = await fetch(url, opts);
+        const text = await res.text();
+        let json;
+        try{ json = JSON.parse(text); }
+        catch(_){ throw new Error('服务器返回异常(' + res.status + ')，请检查 Vercel 环境变量'); }
+        if(!res.ok) throw new Error(json.message || json.error || '请求失败('+res.status+')');
+        return json;
+    }
+
     // ---- Toast ----
     const toastEl = document.getElementById('toast');
     let toastTimer;
@@ -115,11 +126,10 @@
         const token = localStorage.getItem('lt_token');
         if(!token){ location.href = '/'; return; }
         try{
-            const res = await fetch(API_BASE + '/me', {
+            const data = await safeFetch(API_BASE + '/me', {
                 headers: {'Authorization':'Bearer '+token}
             });
-            const data = await res.json();
-            if(!res.ok || !data.user) throw new Error('auth failed');
+            if(!data.user) throw new Error('auth failed');
             if(data.user.role !== 'super_admin' && data.user.role !== 'admin'){
                 toast('需要管理员权限','err');
                 setTimeout(() => location.href = '/', 1500);
@@ -143,9 +153,7 @@
         try{
             let url = API_BASE + '/admin/users';
             if(search) url += '?search=' + encodeURIComponent(search);
-            const res = await fetch(url, {headers:{'Authorization':'Bearer '+token}});
-            const data = await res.json();
-            if(!res.ok) throw new Error(data.message || '加载失败');
+            const data = await safeFetch(url, {headers:{'Authorization':'Bearer '+token}});
 
             document.getElementById('statsText').textContent = '共 ' + data.total + ' 个用户';
 
@@ -193,13 +201,11 @@
         if(!confirm(`将 ${email} 设为「${ROLE_LABELS[role]}」？`)){ loadUsers(); return; }
         const token = localStorage.getItem('lt_token');
         try{
-            const res = await fetch(API_BASE+'/admin/set-role',{
+            const data = await safeFetch(API_BASE+'/admin/set-role',{
                 method:'POST',
                 headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
                 body:JSON.stringify({userId,role})
             });
-            const data = await res.json();
-            if(!res.ok) throw new Error(data.message);
             toast(data.message,'ok');
             loadUsers(document.getElementById('searchInput').value.trim());
         }catch(e){ toast(e.message,'err'); loadUsers(); }
@@ -212,13 +218,11 @@
         if(pwd.length < 8){ toast('密码至少8位','err'); return; }
         const token = localStorage.getItem('lt_token');
         try{
-            const res = await fetch(API_BASE+'/admin/reset-user-password',{
+            const data = await safeFetch(API_BASE+'/admin/reset-user-password',{
                 method:'POST',
                 headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
                 body:JSON.stringify({userId,newPassword:pwd})
             });
-            const data = await res.json();
-            if(!res.ok) throw new Error(data.message);
             toast(data.message,'ok');
         }catch(e){ toast(e.message,'err'); }
     };
@@ -228,13 +232,11 @@
         if(!confirm(`⚠️ 永久删除「${email}」？不可撤销！`)) return;
         const token = localStorage.getItem('lt_token');
         try{
-            const res = await fetch(API_BASE+'/admin/delete-user',{
+            const data = await safeFetch(API_BASE+'/admin/delete-user',{
                 method:'POST',
                 headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
                 body:JSON.stringify({userId})
             });
-            const data = await res.json();
-            if(!res.ok) throw new Error(data.message);
             toast(data.message,'ok');
             loadUsers(document.getElementById('searchInput').value.trim());
         }catch(e){ toast(e.message,'err'); }
