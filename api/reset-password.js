@@ -12,11 +12,18 @@ module.exports = async (req, res) => {
         return jsonRes(res, 400, { message: '请输入邮箱' });
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://tr114512.github.io/light-snow-town/index.html?reset=true'
-    });
+    try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: 'https://tr114512.github.io/light-snow-town/index.html?reset=true'
+        });
 
-    if (error) return jsonRes(res, 400, { message: error.message });
+        if (error) {
+            return jsonRes(res, 400, { message: error.message });
+        }
 
-    jsonRes(res, 200, { message: '重置邮件已发送' });
+        jsonRes(res, 200, { message: '重置邮件已发送' });
+    } catch (err) {
+        console.error(err);
+        jsonRes(res, 500, { message: '服务器错误' });
+    }
 };
