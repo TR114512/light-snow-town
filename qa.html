@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灯雪镇 · 问答中心</title>
+    <link rel="icon" type="image/jpeg" href="server-icon.jpg">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#0f1a2e;--card:rgba(15,26,46,0.9);--border:rgba(59,130,246,0.3);--blue:#3b82f6;--gold:#f5b042;--text:#e0e8f0;--dim:#8899aa;--danger:#ef4444;--success:#22c55e;--input-bg:#1a2a3f;--tag-bg:rgba(59,130,246,0.12)}
+        body.light{--bg:#f0f4fa;--card:rgba(255,255,255,0.95);--border:rgba(59,130,246,0.25);--text:#1e2f3c;--dim:#5a6f8c;--input-bg:#e8eef4;--tag-bg:rgba(59,130,246,0.08)}
+        body{background:var(--bg);color:var(--text);font-family:'Segoe UI','PingFang SC',system-ui,sans-serif;min-height:100vh}
+        .container{max-width:960px;margin:0 auto;padding:24px 20px}
+        header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+        header h1{font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,#d9eaff,#7bc5ff,#f5b042);background-clip:text;-webkit-background-clip:text;color:transparent}
+        header .nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:0.85rem}
+        .btn{padding:8px 18px;border-radius:30px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:0.85rem;transition:.15s;font-family:inherit;white-space:nowrap}
+        .btn:hover{border-color:var(--blue);background:rgba(59,130,246,0.1)}
+        .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+        .btn.primary:hover{filter:brightness(1.1)}
+        .btn.danger{color:var(--danger);border-color:rgba(239,68,68,0.3)}
+        .btn.danger:hover{background:rgba(239,68,68,0.1);border-color:var(--danger)}
+        .btn.sm{padding:4px 12px;font-size:0.75rem}
+
+        .q-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:10px;cursor:pointer;transition:.15s}
+        .q-item:hover{border-color:var(--blue);transform:translateX(2px)}
+        .q-num{font-weight:700;color:var(--blue);font-size:0.8rem;margin-right:8px}
+        .q-title{font-size:1rem;font-weight:600;margin-bottom:4px}
+        .q-meta{font-size:0.75rem;color:var(--dim);display:flex;gap:12px;flex-wrap:wrap}
+        .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.65rem;font-weight:600}
+        .badge.open{background:rgba(34,197,94,0.15);color:var(--success)}
+        .badge.answered{background:rgba(59,130,246,0.15);color:var(--blue)}
+        .badge.closed{background:rgba(136,153,170,0.15);color:var(--dim)}
+
+        .detail-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:999;display:none;align-items:center;justify-content:center}
+        .detail-overlay.open{display:flex}
+        .detail-card{background:var(--card);border:1px solid var(--border);border-radius:16px;width:min(700px,94%);max-height:88vh;overflow-y:auto;padding:24px}
+        .detail-card h2{font-size:1.2rem;margin-bottom:8px}
+        .detail-body{margin:12px 0;line-height:1.6;white-space:pre-wrap;font-size:0.92rem}
+
+        .reply-box{background:var(--tag-bg);border-radius:12px;padding:12px 16px;margin:8px 0;border-left:3px solid var(--blue)}
+        .reply-box.admin{border-left-color:var(--gold)}
+        .reply-author{font-size:0.75rem;color:var(--dim);margin-bottom:4px}
+        .reply-content{font-size:0.88rem;line-height:1.5}
+
+        .form-group{margin-bottom:12px}
+        .form-control{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;outline:none;font-family:inherit;resize:vertical}
+        .form-control:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,0.15)}
+
+        .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);color:#fff;padding:10px 24px;border-radius:30px;font-size:0.85rem;z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none}
+        .toast.show{opacity:1}
+        .empty{text-align:center;padding:40px;color:var(--dim)}
+
+        @media(max-width:600px){.detail-card{padding:16px}.q-meta{font-size:0.7rem}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>💬 灯雪镇 · 问答中心</h1>
+        <div class="nav">
+            <span id="userInfo" style="color:var(--dim);font-size:0.8rem"></span>
+            <button class="btn" id="loginBtn">登录</button>
+            <button class="btn primary" id="askBtn" style="display:none">+ 提问题</button>
+            <button class="btn" onclick="location.href='/'">← 主页</button>
+        </div>
+    </header>
+
+    <div id="questionList"></div>
+</div>
+
+<!-- 详情弹窗 -->
+<div class="detail-overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+    <div class="detail-card" id="detailCard"></div>
+</div>
+
+<!-- 提问弹窗 -->
+<div class="detail-overlay" id="askOverlay" onclick="if(event.target===this)closeAsk()">
+    <div class="detail-card">
+        <h2>✏️ 提出问题</h2>
+        <div class="form-group"><input class="form-control" id="askTitle" placeholder="问题标题"></div>
+        <div class="form-group"><textarea class="form-control" id="askContent" rows="5" placeholder="详细描述你的问题..."></textarea></div>
+        <div style="display:flex;gap:8px">
+            <button class="btn primary" id="submitAsk">提交问题</button>
+            <button class="btn" onclick="closeAsk()">取消</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+    'use strict';
+    const API = '/api';
+    let token = localStorage.getItem('lt_token');
+    let user = JSON.parse(localStorage.getItem('lt_user')||'null');
+    let userRole = 'user';
+
+    function t(msg,type){
+        const el=document.getElementById('toast');
+        el.textContent=msg;el.className='toast show';
+        el.style.borderLeft='3px solid '+(type==='ok'?'var(--success)':type==='err'?'var(--danger)':'var(--blue)');
+        clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2500);
+    }
+
+    async function sf(url,opts){
+        const res=await fetch(url,opts);
+        const text=await res.text();
+        let json;
+        try{json=JSON.parse(text)}catch(_){throw new Error('服务器异常('+res.status+')')}
+        if(!res.ok) throw new Error(json.message||'请求失败');
+        return json;
+    }
+
+    async function checkAuth(){
+        if(!token){ document.getElementById('userInfo').textContent='未登录'; return; }
+        try{
+            const data=await sf(API+'/me',{headers:{'Authorization':'Bearer '+token}});
+            user=data.user;userRole=user.role||'user';
+            localStorage.setItem('lt_user',JSON.stringify(user));
+            document.getElementById('userInfo').textContent='👤 '+user.email.split('@')[0];
+            document.getElementById('loginBtn').textContent='退出';
+            document.getElementById('loginBtn').onclick=logout;
+            document.getElementById('askBtn').style.display='inline-block';
+        }catch(e){
+            token=null;user=null;userRole='user';
+            localStorage.removeItem('lt_token');localStorage.removeItem('lt_user');
+            document.getElementById('userInfo').textContent='未登录';
+        }
+    }
+
+    function logout(){
+        localStorage.removeItem('lt_token');localStorage.removeItem('lt_user');
+        location.reload();
+    }
+
+    document.getElementById('loginBtn').addEventListener('click',()=>{
+        if(token){logout();return;}
+        location.href='/?login=1';
+    });
+
+    async function loadQuestions(){
+        const list=document.getElementById('questionList');
+        list.innerHTML='<div class="empty">加载中...</div>';
+        try{
+            const data=await sf(API+'/qa/questions');
+            if(!data.questions.length){list.innerHTML='<div class="empty">还没有问题，来提第一个吧 ✨</div>';return}
+            list.innerHTML=data.questions.map(q=>`
+                <div class="q-item" onclick="openDetail(${q.id})">
+                    <span class="q-num">#${q.question_number}</span>
+                    <span class="badge ${q.status}">${q.status==='open'?'待回复':q.status==='answered'?'已回复':'已关闭'}</span>
+                    <div class="q-title">${esc(q.title)}</div>
+                    <div class="q-meta">
+                        <span>${q.author_email?q.author_email.split('@')[0]:'匿名'}</span>
+                        <span>${new Date(q.created_at).toLocaleDateString('zh-CN')}</span>
+                        <span>💬 ${q.answer_count} 回答 · ${q.comment_count} 评论</span>
+                    </div>
+                </div>
+            `).join('');
+        }catch(e){list.innerHTML='<div class="empty" style="color:var(--danger)">'+e.message+'</div>'}
+    }
+
+    async function openDetail(qid){
+        const overlay=document.getElementById('detailOverlay');
+        const card=document.getElementById('detailCard');
+        overlay.classList.add('open');
+        card.innerHTML='<div class="empty">加载中...</div>';
+        try{
+            const data=await sf(API+'/qa/questions?id='+qid);
+            const q=data.question;
+            const answers=data.answers||[];
+            const comments=data.comments||[];
+
+            const isAdmin = userRole==='admin'||userRole==='super_admin';
+
+            card.innerHTML=`
+                <div style="display:flex;justify-content:space-between;align-items:start">
+                    <h2><span class="q-num">#${q.question_number}</span> ${esc(q.title)}</h2>
+                    <div style="display:flex;gap:6px">
+                        ${isAdmin?`<button class="btn danger sm" onclick="delQ(${q.id})">删除</button>`:''}
+                        <button style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--dim)" onclick="closeDetail()">✕</button>
+                    </div>
+                </div>
+                <div class="q-meta" style="margin-bottom:8px">
+                    <span class="badge ${q.status}">${q.status==='open'?'待回复':q.status==='answered'?'已回复':'已关闭'}</span>
+                    <span>${q.author_email?q.author_email.split('@')[0]:'匿名'} · ${new Date(q.created_at).toLocaleDateString('zh-CN')}</span>
+                </div>
+                <div class="detail-body">${esc(q.content)}</div>
+
+                <h3 style="font-size:0.9rem;margin-top:16px;margin-bottom:8px;color:var(--dim)">📝 回答 (${(answers||[]).length})</h3>
+                ${(answers||[]).map(a=>`
+                    <div class="reply-box ${a.is_admin_answer?'admin':''}">
+                        <div class="reply-author">${a.is_admin_answer?'🛡 管理员':'👤'} ${a.author_email?esc(a.author_email.split('@')[0]):'匿名'} · ${new Date(a.created_at).toLocaleString('zh-CN')}</div>
+                        <div class="reply-content">${esc(a.content)}</div>
+                    </div>
+                `).join('')||'<div style="color:var(--dim);font-size:0.85rem">暂无回答</div>'}
+
+                ${isAdmin?`
+                <div style="margin-top:12px">
+                    <textarea class="form-control" id="answerInput" rows="2" placeholder="以管理员身份回答..."></textarea>
+                    <button class="btn primary sm" style="margin-top:6px" onclick="postAnswer(${q.id})">发布回答</button>
+                </div>`:''}
+
+                <h3 style="font-size:0.9rem;margin-top:12px;margin-bottom:6px;color:var(--dim)">💬 评论 (${(comments||[]).length})</h3>
+                ${(comments||[]).map(c=>`
+                    <div class="reply-box">
+                        <div class="reply-author">👤 ${c.author_email?esc(c.author_email.split('@')[0]):'匿名'} · ${new Date(c.created_at).toLocaleString('zh-CN')}</div>
+                        <div class="reply-content">${esc(c.content)}</div>
+                    </div>
+                `).join('')||'<div style="color:var(--dim);font-size:0.85rem">暂无评论</div>'}
+
+                ${token?`
+                <div style="margin-top:10px;display:flex;gap:8px">
+                    <input class="form-control" id="commentInput" placeholder="写评论...">
+                    <button class="btn sm" onclick="postComment(${q.id})">发送</button>
+                </div>`:`<div style="margin-top:10px;color:var(--dim);font-size:0.8rem">请登录后评论</div>`}
+            `;
+        }catch(e){card.innerHTML='<div class="empty" style="color:var(--danger)">'+e.message+'</div>'}
+    }
+
+    function closeDetail(){document.getElementById('detailOverlay').classList.remove('open')}
+    function closeAsk(){document.getElementById('askOverlay').classList.remove('open')}
+    function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+    document.getElementById('askBtn').addEventListener('click',()=>{
+        if(!token){t('请先登录','err');return}
+        document.getElementById('askOverlay').classList.add('open');
+    });
+
+    document.getElementById('submitAsk').addEventListener('click',async()=>{
+        const title=document.getElementById('askTitle').value.trim();
+        const content=document.getElementById('askContent').value.trim();
+        if(!title||!content){t('请填写标题和内容','err');return}
+        try{
+            await sf(API+'/qa/questions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({title,content})});
+            t('问题已提交','ok');closeAsk();loadQuestions();
+            document.getElementById('askTitle').value='';document.getElementById('askContent').value='';
+        }catch(e){t(e.message,'err')}
+    });
+
+    // Global functions for onclick
+    window.postAnswer=async function(qid){
+        const content=document.getElementById('answerInput').value.trim();
+        if(!content){t('请输入回答内容','err');return}
+        try{
+            await sf(API+'/qa/answer',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({question_id:qid,content})});
+            t('回答已发布','ok');openDetail(qid);loadQuestions();
+        }catch(e){t(e.message,'err')}
+    };
+    window.postComment=async function(qid){
+        const content=document.getElementById('commentInput').value.trim();
+        if(!content){t('请输入评论','err');return}
+        try{
+            await sf(API+'/qa/comment',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({question_id:qid,content})});
+            t('评论已发布','ok');openDetail(qid);loadQuestions();
+        }catch(e){t(e.message,'err')}
+    };
+    window.delQ=async function(qid){
+        if(!confirm('确定删除此问题？'))return;
+        try{
+            await sf(API+'/qa/delete',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({question_id:qid})});
+            t('已删除','ok');closeDetail();loadQuestions();
+        }catch(e){t(e.message,'err')}
+    };
+    window.openDetail=openDetail;
+
+    checkAuth().then(()=>loadQuestions());
+})();
+</script>
+</body>
+</html>
