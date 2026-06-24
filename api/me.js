@@ -1,5 +1,9 @@
-const { supabase, jsonRes } = require('./_utils');
-const jwt = require('jsonwebtoken');
+const { jsonRes, handleOptions } = require('./_utils');
+
+module.exports = async (req, res) => {
+    if (handleOptions(req, res)) return;  // 处理 OPTIONS 请求
+    // ... 原有逻辑
+};
 
 module.exports = async (req, res) => {
     const authHeader = req.headers.authorization;
