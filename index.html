@@ -259,7 +259,7 @@
 </div>
 
 <!-- 开发者模态框 -->
-<div id="devModalOverlay" class="dev-modal-overlay"><div class="dev-modal"><div class="dev-modal-header"><h3>灯雪镇 · 开发人员</h3><button class="close-dev-modal" id="closeDevModalBtn">✕</button></div><div class="dev-list"><div class="dev-item"><span class="dev-role">开发者</span><span class="dev-name">Minecraft-云墨</span></div><div class="dev-item"><span class="dev-role">设计师</span><span class="dev-name">Fish</span></div><div class="dev-item"><span class="dev-role">结构规划</span><span class="dev-name">TPS QMIT</span></div><div class="dev-item"><span class="dev-role">屎上镶金</span><span class="dev-name">🍊 我已急哭</span></div><div class="dev-item"><span class="dev-role">特别鸣谢</span><span class="dev-name">Xiao_Zhinecr</span></div></div><div class="dev-note">感谢每一位建设灯雪镇的朋友</div></div></div>
+<div id="devModalOverlay" class="dev-modal-overlay"><div class="dev-modal"><div class="dev-modal-header"><h3>灯雪镇 · 开发人员</h3><button class="close-dev-modal" id="closeDevModalBtn">✕</button></div><div class="dev-list"><div class="dev-item"><span class="dev-role">开发者</span><span class="dev-name">Minecraft-云墨 &amp; fish</span></div><div class="dev-item"><span class="dev-role">设计师</span><span class="dev-name">Fish</span></div><div class="dev-item"><span class="dev-role">结构规划</span><span class="dev-name">TPS QMIT</span></div><div class="dev-item"><span class="dev-role">屎上镶金</span><span class="dev-name">🍊 我已急哭</span></div><div class="dev-item"><span class="dev-role">特别鸣谢</span><span class="dev-name">Xiao_Zhinecr</span></div></div><div class="dev-note">感谢每一位建设灯雪镇的朋友</div></div></div>
 
 <div id="toastMsg" class="toast-notification"> 已复制</div>
 
@@ -307,6 +307,14 @@
                     <label>确认密码</label>
                     <input type="password" class="form-control" id="regPasswordConfirmModal" placeholder="再次输入密码" required>
                 </div>
+                <div class="form-group">
+                    <label>QQ号（选填）</label>
+                    <input type="text" class="form-control" id="regQQModal" placeholder="输入QQ号，方便联系">
+                </div>
+                <div class="form-group">
+                    <label>游戏内 ID（选填）</label>
+                    <input type="text" class="form-control" id="regGameIdModal" placeholder="Minecraft 游戏ID">
+                </div>
                 <div class="form-group" id="regCodeGroupModal" style="display:none;">
                     <label>📧 验证码（注册成功后显示在下方）</label>
                     <div class="code-row">
@@ -351,6 +359,17 @@
             <div class="user-stats">
                 <div class="stat-item"><div class="stat-num" id="profileStatusModal">✓</div><div class="stat-label">账号状态</div></div>
                 <div class="stat-item"><div class="stat-num" id="profileVerifiedModal">已验证</div><div class="stat-label">邮箱验证</div></div>
+            </div>
+            <div style="margin-top:12px;">
+                <div class="form-group">
+                    <label>QQ号</label>
+                    <input type="text" class="form-control" id="profileQQModal" placeholder="未填写">
+                </div>
+                <div class="form-group">
+                    <label>游戏内 ID</label>
+                    <input type="text" class="form-control" id="profileGameIdModal" placeholder="未填写">
+                </div>
+                <button class="btn-primary" id="profileUpdateInfoBtn" style="margin-bottom:12px;">保存资料</button>
             </div>
             <div style="margin-top:12px;">
                 <div class="form-group">
@@ -653,7 +672,9 @@
             }
 
             try {
-                const data = await apiCall('register', { email, password: pwd });
+                const qq = document.getElementById('regQQModal').value.trim();
+                const gameId = document.getElementById('regGameIdModal').value.trim();
+                const data = await apiCall('register', { email, password: pwd, qq, game_id: gameId });
                 // 显示验证码
                 document.getElementById('regCodeGroupModal').style.display = 'block';
                 document.getElementById('regCodeHintModal').textContent = '验证码：' + data.code + '（10分钟内有效）';
@@ -734,6 +755,8 @@
                 document.getElementById('profileOldPwdModal').value = '';
                 document.getElementById('profileNewPwdModal').value = '';
                 document.getElementById('profileNewPwdConfirmModal').value = '';
+                document.getElementById('profileQQModal').value = user.qq || '';
+                document.getElementById('profileGameIdModal').value = user.game_id || '';
                 // 管理面板入口：数据库角色 或 环境变量兜底
                 const staffRoles = ['super_admin', 'admin'];
                 const adminEmails = (localStorage.getItem('lt_admin_emails') || '').split(',').map(e => e.trim().toLowerCase());
@@ -781,6 +804,21 @@
                 document.getElementById('profileOldPwdModal').value = '';
                 document.getElementById('profileNewPwdModal').value = '';
                 document.getElementById('profileNewPwdConfirmModal').value = '';
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        });
+
+        // ---- 更新个人资料（QQ / 游戏ID） ----
+        document.getElementById('profileUpdateInfoBtn').addEventListener('click', async function() {
+            const token = localStorage.getItem('lt_token');
+            if (!token) { showToast('请先登录', 'error'); return; }
+            const qq = document.getElementById('profileQQModal').value.trim();
+            const gameId = document.getElementById('profileGameIdModal').value.trim();
+
+            try {
+                const data = await apiCall('update-profile', { qq, game_id: gameId }, token);
+                showToast(data.message || '资料已保存', 'success');
             } catch (err) {
                 showToast(err.message, 'error');
             }

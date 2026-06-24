@@ -17,11 +17,21 @@ module.exports = async (req, res) => {
             return jsonRes(res, 404, { message: '用户不存在' });
         }
         const role = await getUserRole(user.id, user.email);
+        // 也查 profiles 获取 QQ 和游戏 ID
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('qq, game_id, display_name')
+            .eq('id', user.id)
+            .single();
+
         jsonRes(res, 200, {
             user: {
                 email: user.email,
                 id: user.id,
                 role: role,
+                qq: (profile && profile.qq) || (user.user_metadata && user.user_metadata.qq) || '',
+                game_id: (profile && profile.game_id) || (user.user_metadata && user.user_metadata.game_id) || '',
+                display_name: (profile && profile.display_name) || '',
                 created_at: user.created_at,
                 email_confirmed_at: user.email_confirmed_at
             }

@@ -17,17 +17,19 @@ module.exports = async (req, res) => {
         // 获取 profiles 表
         const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, role, display_name');
+            .select('id, role, display_name, qq, game_id');
 
         const roleMap = {};
         if (profiles) {
-            profiles.forEach(p => { roleMap[p.id] = { role: p.role, display_name: p.display_name }; });
+            profiles.forEach(p => { roleMap[p.id] = { role: p.role, display_name: p.display_name, qq: p.qq, game_id: p.game_id }; });
         }
 
         const userList = users.map(u => ({
             id: u.id,
             email: u.email,
-            role: roleMap[u.id]?.role || 'user',
+            role: (u.user_metadata && u.user_metadata.role) || roleMap[u.id]?.role || 'user',
+            qq: roleMap[u.id]?.qq || (u.user_metadata && u.user_metadata.qq) || '',
+            game_id: roleMap[u.id]?.game_id || (u.user_metadata && u.user_metadata.game_id) || '',
             display_name: roleMap[u.id]?.display_name || '',
             email_confirmed: !!u.email_confirmed_at,
             created_at: u.created_at,

@@ -7,18 +7,18 @@ module.exports = async (req, res) => {
         return jsonRes(res, 405, { message: 'Method not allowed' });
     }
 
-    const { email, password } = req.body;
+    const { email, password, qq, game_id } = req.body;
     if (!email || !password) {
         return jsonRes(res, 400, { message: '请填写完整信息' });
     }
 
     try {
-        // Supabase 创建用户（同时自动发确认链接邮件）
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
-                emailRedirectTo: process.env.SITE_URL || '/'
+                emailRedirectTo: process.env.SITE_URL || '/',
+                data: { qq: qq || '', game_id: game_id || '' }
             }
         });
 
@@ -27,9 +27,18 @@ module.exports = async (req, res) => {
             return jsonRes(res, 400, { message: error.message });
         }
 
-        // 生成6位验证码（无需等邮件，直接页面显示）
+        // 存 QQ 和游戏 ID 到 profiles
+        await supabase.from('profiles').upsert({
+            id: data.user.id,
+            email: email,
+            qq: qq || '',
+            game_id: game_id || '',
+            updated_at: new Date().toISOString()
+        });
+
+        // 生成6位验证码
         const code = String(Math.floor(100000 + Math.random() * 900000));
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10分钟有效
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
         await supabase.from('verification_codes').insert({
             user_id: data.user.id,
@@ -40,8 +49,8 @@ module.exports = async (req, res) => {
 
         jsonRes(res, 200, {
             message: '注册成功！请输入下方验证码完成激活',
-            code: code,  // 直接返回验证码，页面上显示
-            user: { email: data.user.email, id: data.user.id }
+            code: code,
+            user: { email: data.user.email, id: data.user.id, qq: qq || '', game_id: game_id || '' }
         });
     } catch (err) {
         console.error('Unexpected error:', err);

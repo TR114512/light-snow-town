@@ -61,24 +61,24 @@ const PERMISSION_ROLE = {
     'admins.manage': 'super_admin'
 };
 
-// 从 profiles 表 + user_metadata 查角色，失败则回退到环境变量
+// 查角色：user_metadata 优先（绕过 RLS），profiles 表兜底
 async function getUserRole(userId, email) {
     try {
-        // 1. 先查 profiles 表
+        // 1. 先查 user_metadata（set-role 写在这里，RLS 拦不住）
+        const { data: { user }, error: ue } = await supabase.auth.admin.getUserById(userId);
+        if (!ue && user && user.user_metadata && user.user_metadata.role) {
+            return user.user_metadata.role;
+        }
+    } catch (_) { /* 继续 */ }
+
+    try {
+        // 2. 再查 profiles 表
         const { data, error } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', userId)
             .single();
         if (!error && data && data.role) return data.role;
-    } catch (_) { /* 继续 */ }
-
-    try {
-        // 2. 再查 user_metadata（set-role 双写在这里）
-        const { data: { user }, error: ue } = await supabase.auth.admin.getUserById(userId);
-        if (!ue && user && user.user_metadata && user.user_metadata.role) {
-            return user.user_metadata.role;
-        }
     } catch (_) { /* 继续 */ }
 
     // 3. 环境变量兜底
