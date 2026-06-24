@@ -675,6 +675,8 @@
                 const qq = document.getElementById('regQQModal').value.trim();
                 const gameId = document.getElementById('regGameIdModal').value.trim();
                 const data = await apiCall('register', { email, password: pwd, qq, game_id: gameId });
+                // 暂存密码用于验证后自动登录
+                document.getElementById('regPasswordModal').setAttribute('data-pwd', pwd);
                 // 显示验证码输入框，提示查邮箱
                 document.getElementById('regCodeGroupModal').style.display = 'block';
                 document.getElementById('regCodeHintModal').textContent = '验证码已发送至 ' + email + '，请查收邮件';
@@ -705,12 +707,23 @@
 
             try {
                 const data = await apiCall('verify-email', { email, code });
-                showToast(data.message || '✅ 验证成功！', 'success');
-                // 切回登录页
+                showToast(data.message || '✅ 验证成功！正在登录...', 'success');
+                // 隐藏验证码区
                 document.getElementById('regCodeGroupModal').style.display = 'none';
                 document.getElementById('registerFormModal').reset();
-                showAuthView('login');
-                document.getElementById('loginEmailModal').value = email;
+                // 自动登录（使用暂存的密码）
+                const savedPwd = document.getElementById('regPasswordModal').getAttribute('data-pwd') || '';
+                if (savedPwd) {
+                    const loginData = await apiCall('login', { email, password: savedPwd });
+                    localStorage.setItem('lt_token', loginData.token);
+                    localStorage.setItem('lt_user', JSON.stringify(loginData.user));
+                    updateAuthButton(true);
+                    showToast('验证成功，已自动登录', 'success');
+                    showAuthView('profile');
+                } else {
+                    showAuthView('login');
+                    document.getElementById('loginEmailModal').value = email;
+                }
             } catch (err) {
                 showToast(err.message, 'error');
             }

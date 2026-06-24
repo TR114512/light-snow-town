@@ -22,6 +22,31 @@ module.exports = async (req, res) => {
         });
 
         if (error) {
+            // 用户已存在 → 如果未验证，重新发验证码
+            if (error.message && error.message.includes('already been registered')) {
+                // 找到已有用户
+                const { data: users } = await supabase.auth.admin.listUsers();
+                const existing = (users.users || []).find(u => u.email === email);
+                if (existing) {
+                    if (existing.email_confirmed_at) {
+                        return jsonRes(res, 400, { message: '该邮箱已注册并验证，请直接登录' });
+                    }
+                    // 未验证 → 重新发码
+                    const code = String(Math.floor(100000 + Math.random() * 900000));
+                    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+                    await supabase.from('verification_codes').insert({
+                        user_id: existing.id,
+                        code: code,
+                        type: 'email_verify',
+                        expires_at: expiresAt.toISOString()
+                    });
+                    await sendVerificationEmail(email, code);
+                    return jsonRes(res, 200, {
+                        message: '该邮箱已注册但未验证，新的验证码已发送至您的邮箱',
+                        user: { email: existing.email, id: existing.id }
+                    });
+                }
+            }
             console.error('Supabase createUser error:', error);
             return jsonRes(res, 400, { message: error.message });
         }
