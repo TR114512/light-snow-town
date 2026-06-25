@@ -762,7 +762,7 @@
         }
 
         authToggleBtn.addEventListener('click', function(){
-            if(!privacyAccepted){
+            if(localStorage.getItem('lt_privacy_accepted') !== '1'){
                 if(privacyOverlay) privacyOverlay.classList.add('open');
                 showToast('请先同意隐私政策', 'error');
                 return;
@@ -1133,7 +1133,7 @@
         localStorage.setItem('lt_privacy_accepted', '1');
         privacyAccepted = true;
         if(privacyOverlay) privacyOverlay.classList.remove('open');
-        if(privacyBar) privacyBar.style.display = 'block';
+        if(privacyBar) privacyBar.style.display = 'none';
     }
 
     if(confirmBtn) {
@@ -1147,22 +1147,17 @@
     if(document.getElementById('privacyDenyBtn')) {
         document.getElementById('privacyDenyBtn').addEventListener('click', function(){
             if(privacyOverlay) privacyOverlay.classList.remove('open');
-            if(privacyBar) privacyBar.style.display = 'block';
-            // 未同意，禁用账户功能
         });
     }
     if(document.getElementById('privacyCloseBtn')) {
         document.getElementById('privacyCloseBtn').addEventListener('click', function(){
             if(privacyOverlay) privacyOverlay.classList.remove('open');
-            if(!privacyAccepted && privacyBar) privacyBar.style.display = 'block';
         });
     }
 
     // 首次访问：弹出隐私政策
     if(!privacyAccepted && privacyOverlay) {
         privacyOverlay.classList.add('open');
-    } else if(privacyBar) {
-        privacyBar.style.display = 'block';
     }
 
     // 未同意隐私政策时拦截账户功能
