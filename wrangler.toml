@@ -2,15 +2,12 @@
 name = "lighttown-api"
 main = "worker.js"
 compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
 
 # 排除不需要上传的文件
 [build]
 command = ""
 
 [build.upload]
-exclude = ["node_modules", ".git", "api", "*.html", "server-icon.jpg", "vercel.json"]
+exclude = ["api", "*.html", "server-icon.jpg", ".gitignore", "vercel.json"]
 
-[env.production]
-vars = { ENVIRONMENT = "production" }
-
-# 环境变量请在 Cloudflare Dashboard 中设置
