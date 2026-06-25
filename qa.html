@@ -76,6 +76,7 @@
             <span id="userInfo" style="color:var(--dim);font-size:0.8rem"></span>
             <button class="btn" id="loginBtn">登录</button>
             <button class="btn primary" id="askBtn" style="display:none">+ 提问题</button>
+            <button class="btn" id="myQuestionsBtn" style="display:none">📋 我的问题</button>
             <button class="btn" onclick="location.href='https://tr114512.github.io/light-snow-town/home.html'">← 主页</button>
         </div>
     </header>
@@ -109,6 +110,7 @@
     let user = JSON.parse(localStorage.getItem('lt_user')||'null');
     let userRole = 'user'; // 'admin' 管理员, 'user' 玩家
     let expandedId = null; // 当前展开的问题 ID
+    let myMode = false;   // 是否只看"我的问题"
 
     function t(msg,type){
         const el=document.getElementById('toast');
@@ -132,10 +134,11 @@
             const data=await sf(API+'/me',{headers:{'Authorization':'Bearer '+token}});
             user=data.user;userRole=user.role||'user';
             localStorage.setItem('lt_user',JSON.stringify(user));
-            document.getElementById('userInfo').textContent='👤 '+user.email.split('@')[0];
+            document.getElementById('userInfo').textContent='👤 '+(user.game_id||user.email.split('@')[0]);
             document.getElementById('loginBtn').textContent='退出';
             document.getElementById('loginBtn').onclick=logout;
             document.getElementById('askBtn').style.display='inline-block';
+            document.getElementById('myQuestionsBtn').style.display='inline-block';
         }catch(e){
             token=null;user=null;userRole='user';
             localStorage.removeItem('lt_token');localStorage.removeItem('lt_user');
@@ -153,15 +156,40 @@
         location.href='https://tr114512.github.io/light-snow-town/home.html?login=1';
     });
 
+    // 我的问题 / 全部 切换
+    document.getElementById('myQuestionsBtn').addEventListener('click',()=>{
+        myMode = !myMode;
+        expandedId = null;
+        loadQuestions();
+    });
+
     function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
     // ===== 渲染问题列表（含空详情占位） =====
     async function loadQuestions(){
         const list=document.getElementById('questionList');
+        const btn = document.getElementById('myQuestionsBtn');
         list.innerHTML='<div class="empty">加载中...</div>';
+
+        // 更新按钮样式
+        if(myMode){
+            btn.textContent = '📋 查看全部';
+            btn.classList.add('primary');
+        } else {
+            btn.textContent = '📋 我的问题';
+            btn.classList.remove('primary');
+        }
+
         try{
-            const data=await sf(API+'/qa/questions');
-            if(!data.questions.length){list.innerHTML='<div class="empty">还没有问题，来提第一个吧 ✨</div>';return}
+            const url = myMode ? API+'/qa/questions?my=1' : API+'/qa/questions';
+            const opts = myMode ? {headers:{'Authorization':'Bearer '+token}} : {};
+            const data = await sf(url, opts);
+            if(!data.questions.length){
+                list.innerHTML = myMode
+                    ? '<div class="empty">你还没有提过问题 ✨</div>'
+                    : '<div class="empty">还没有问题，来提第一个吧 ✨</div>';
+                return;
+            }
             const isAdmin = userRole==='admin';
             list.innerHTML=data.questions.map(q=>`
                 <div class="q-item" id="q-${q.id}">

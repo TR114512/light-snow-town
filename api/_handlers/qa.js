@@ -60,12 +60,25 @@ async function questions(req, res) {
             } catch (e) { return jsonRes(res, 500, { message: '服务器错误' }); }
         }
 
-        // 列表
+        // 列表（支持 ?my=1 只看自己的）
         try {
-            const { data: questions, error } = await supabase
+            let query = supabase
                 .from('questions')
                 .select('*')
                 .order('created_at', { ascending: false });
+
+            // 过滤"我的问题"
+            if ((req.query || {}).my === '1') {
+                const authHeader = req.headers.authorization;
+                if (!authHeader) return jsonRes(res, 401, { message: '请先登录' });
+                const token = authHeader.split(' ')[1];
+                let decoded;
+                try { decoded = jwt.verify(token, process.env.JWT_SECRET); }
+                catch (_) { return jsonRes(res, 401, { message: 'Token 无效' }); }
+                query = query.eq('author_id', decoded.id);
+            }
+
+            const { data: questions, error } = await query;
 
             if (error) return jsonRes(res, 500, { message: error.message });
 
@@ -96,6 +109,8 @@ async function questions(req, res) {
 
         const { title, content } = req.body;
         if (!title || !content) return jsonRes(res, 400, { message: '请填写标题和内容' });
+        if (title.length > 200) return jsonRes(res, 400, { message: '标题不能超过200字' });
+        if (content.length > 5000) return jsonRes(res, 400, { message: '内容不能超过5000字' });
 
         try {
             // 手动计算编号：取当前最大编号 + 1（删除后不会留空洞）
@@ -139,6 +154,7 @@ async function answer(req, res) {
 
     const { question_id, content } = req.body;
     if (!question_id || !content) return jsonRes(res, 400, { message: '请提供问题ID和回答内容' });
+    if (content.length > 5000) return jsonRes(res, 400, { message: '回答内容不能超过5000字' });
 
     try {
         const { data, error } = await supabase
@@ -177,6 +193,7 @@ async function comment(req, res) {
 
     const { question_id, content } = req.body;
     if (!question_id || !content) return jsonRes(res, 400, { message: '请提供问题ID和评论内容' });
+    if (content.length > 2000) return jsonRes(res, 400, { message: '评论不能超过2000字' });
 
     try {
         const { data, error } = await supabase

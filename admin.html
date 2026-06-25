@@ -66,6 +66,7 @@
 
     <div class="toolbar">
         <input class="search-box" id="searchInput" placeholder="🔍 搜索用户邮箱...">
+        <button class="btn sm" id="toggleUnverified">📋 仅已验证</button>
         <span class="stats" id="statsText">共 0 个用户</span>
     </div>
 
@@ -101,6 +102,10 @@
 
     let operatorRole = 'user';
     let operatorEmail = '';
+    let showAll = false;  // 默认只显示已验证用户
+
+    // HTML 转义防 XSS
+    function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
     // ---- 安全 fetch（防 HTML 响应崩 JSON 解析） ----
     async function safeFetch(url, opts){
@@ -155,7 +160,10 @@
         const token = localStorage.getItem('lt_token');
         try{
             let url = API_BASE + '/admin/users';
-            if(search) url += '?search=' + encodeURIComponent(search);
+            const params = [];
+            if(search) params.push('search=' + encodeURIComponent(search));
+            if(showAll) params.push('all=1');
+            if(params.length) url += '?' + params.join('&');
             const data = await safeFetch(url, {headers:{'Authorization':'Bearer '+token}});
 
             document.getElementById('statsText').textContent = '共 ' + data.total + ' 个用户';
@@ -174,25 +182,30 @@
                 const canDelete = !isSelf;
                 const canPwd = !isSelf;
 
+                const eId = escHtml(u.id);
+                const eEmail = escHtml(u.email);
+                const eQQ = escHtml(u.qq);
+                const eGameId = escHtml(u.game_id);
+
                 let roleCell;
                 if(canEdit){
                     const opts = canManage.map(r => `<option value="${r}" ${u.role===r?'selected':''}>${ROLE_LABELS[r]}</option>`).join('');
-                    roleCell = `<select class="role-select" onchange="setRole('${u.id}','${u.email}',this.value)">${opts}</select>`;
+                    roleCell = `<select class="role-select" data-userid="${eId}" data-email="${eEmail}" onchange="setRole(this.dataset.userid,this.dataset.email,this.value)">${opts}</select>`;
                 } else {
                     const cls = u.role === 'admin' ? 'admin' : 'user';
                     roleCell = `<span class="badge ${cls}">${ROLE_LABELS[u.role]||u.role}</span>`;
                 }
 
                 return `<tr>
-                    <td><strong>${u.email}</strong>${isSelf?' <span style="font-size:0.7rem;opacity:0.5;">(你)</span>':''}</td>
-                    <td style="font-size:0.82rem;">${u.qq || '<span style="color:var(--dim);opacity:0.5;">-</span>'}</td>
-                    <td style="font-size:0.82rem;">${u.game_id || '<span style="color:var(--dim);opacity:0.5;">-</span>'}</td>
+                    <td><strong>${eEmail}</strong>${isSelf?' <span style="font-size:0.7rem;opacity:0.5;">(你)</span>':''}</td>
+                    <td style="font-size:0.82rem;">${eQQ || '<span style="color:var(--dim);opacity:0.5;">-</span>'}</td>
+                    <td style="font-size:0.82rem;">${eGameId || '<span style="color:var(--dim);opacity:0.5;">-</span>'}</td>
                     <td>${u.email_confirmed?'<span class="badge verified">✓ 已验证</span>':'<span class="badge unverified">✗ 未验证</span>'}</td>
                     <td>${roleCell}</td>
                     <td style="font-size:0.8rem;color:var(--dim)">${new Date(u.created_at).toLocaleDateString('zh-CN')}</td>
                     <td><div class="actions">
-                        ${canPwd?`<button class="btn" style="font-size:0.7rem;padding:4px 12px" onclick="resetPwd('${u.id}','${u.email}')">改密码</button>`:''}
-                        ${canDelete?`<button class="btn danger" style="font-size:0.7rem;padding:4px 12px" onclick="deleteUser('${u.id}','${u.email}')">删除</button>`:''}
+                        ${canPwd?`<button class="btn" style="font-size:0.7rem;padding:4px 12px" data-userid="${eId}" data-email="${eEmail}" onclick="resetPwd(this.dataset.userid,this.dataset.email)">改密码</button>`:''}
+                        ${canDelete?`<button class="btn danger" style="font-size:0.7rem;padding:4px 12px" data-userid="${eId}" data-email="${eEmail}" onclick="deleteUser(this.dataset.userid,this.dataset.email)">删除</button>`:''}
                     </div></td>
                 </tr>`;
             }).join('');
@@ -250,6 +263,11 @@
     // ---- 事件绑定 ----
     document.getElementById('searchInput').addEventListener('input',function(){
         loadUsers(this.value.trim());
+    });
+    document.getElementById('toggleUnverified').addEventListener('click',function(){
+        showAll = !showAll;
+        this.textContent = showAll ? '📋 显示全部' : '📋 仅已验证';
+        loadUsers(document.getElementById('searchInput').value.trim());
     });
     document.getElementById('logoutBtn').addEventListener('click',function(){
         localStorage.removeItem('lt_token');

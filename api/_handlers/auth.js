@@ -31,12 +31,16 @@ async function register(req, res) {
     const { email, password, qq, game_id } = req.body;
     if (!email || !password) return jsonRes(res, 400, { message: '请填写完整信息' });
 
+    // 输入验证：防注入 + 长度限制
+    const safeQQ = String(qq || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
+    const safeGameId = String(game_id || '').replace(/[<>]/g, '').slice(0, 32);
+
     try {
         const { data, error } = await supabase.auth.admin.createUser({
             email,
             password,
             email_confirm: false,
-            user_metadata: { qq: qq || '', game_id: game_id || '' }
+            user_metadata: { qq: safeQQ, game_id: safeGameId }
         });
 
         if (error) {
@@ -151,6 +155,9 @@ async function changePassword(req, res) {
     if (req.method !== 'POST') return jsonRes(res, 405, { message: 'Method not allowed' });
 
     const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) return jsonRes(res, 400, { message: '请填写完整信息' });
+    if (newPassword.length < 8) return jsonRes(res, 400, { message: '新密码至少8位' });
+
     const authHeader = req.headers.authorization;
     if (!authHeader) return jsonRes(res, 401, { message: '未登录' });
 
@@ -235,22 +242,25 @@ async function updateProfile(req, res) {
         return jsonRes(res, 401, { message: 'Token 无效' });
     }
 
-    const { qq, game_id } = req.body;
+    const rawQQ = qq || '';
+    const rawGameId = game_id || '';
+    const safeQQ = String(rawQQ).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
+    const safeGameId = String(rawGameId).replace(/[<>]/g, '').slice(0, 32);
 
     try {
         const { error } = await supabase
             .from('profiles')
             .upsert({
                 id: decoded.id,
-                qq: qq || '',
-                game_id: game_id || '',
+                qq: safeQQ,
+                game_id: safeGameId,
                 updated_at: new Date().toISOString()
             });
 
         if (error) return jsonRes(res, 500, { message: error.message });
 
         await supabase.auth.admin.updateUserById(decoded.id, {
-            user_metadata: { qq: qq || '', game_id: game_id || '' }
+            user_metadata: { qq: safeQQ, game_id: safeGameId }
         });
 
         jsonRes(res, 200, { message: '资料已更新' });

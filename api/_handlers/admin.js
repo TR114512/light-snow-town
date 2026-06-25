@@ -31,11 +31,17 @@ async function users(req, res) {
             last_sign_in: u.last_sign_in_at
         }));
 
-        const { search } = req.query || {};
+        const { search, all } = req.query || {};
         let filtered = userList;
+
+        // 默认只显示已验证用户，?all=1 显示全部
+        if (all !== '1') {
+            filtered = filtered.filter(u => u.email_confirmed);
+        }
+
         if (search) {
             const q = search.toLowerCase();
-            filtered = userList.filter(u => u.email.toLowerCase().includes(q));
+            filtered = filtered.filter(u => u.email.toLowerCase().includes(q));
         }
 
         jsonRes(res, 200, {
