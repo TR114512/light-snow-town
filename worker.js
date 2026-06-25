@@ -1,7 +1,7 @@
 /**
  * 灯雪镇 Cloudflare Workers 完整版
  */
-function cors(){return{'Access-Control-Allow-Origin':'https://tr114512.github.io','Access-Control-Allow-Methods':'GET,POST,OPTIONS,DELETE','Access-Control-Allow-Headers':'Content-Type,Authorization','X-Content-Type-Options':'nosniff'}}
+function cors(){return{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS,DELETE','Access-Control-Allow-Headers':'Content-Type,Authorization'}}
 function json(d,s=200){return new Response(JSON.stringify(d),{status:s,headers:{...cors(),'Content-Type':'application/json;charset=utf-8'}})}
 
 // btoa 安全版
