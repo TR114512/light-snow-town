@@ -202,7 +202,7 @@
 
 <canvas id="dynamicBgCanvas"></canvas>
 
-<div class="main-content entrance-animation">
+<div class="main-content" id="mainContent" style="opacity:0">
     <div class="top-bar">
         <div class="logo-area">
             <h1>灯雪镇</h1>
@@ -248,6 +248,9 @@
     <div class="drawer-header"><span>视觉调校</span><div class="close-drawer" id="closeDrawerBtn">✕</div></div>
     <div style="max-height:90%; overflow-y:auto;">
         <div class="setting-group"><label>界面主题</label><div class="theme-switch-group"><button id="themeDarkBtn" class="theme-mode-btn active">深色模式</button><button id="themeLightBtn" class="theme-mode-btn">浅色模式</button></div></div>
+        <div class="setting-group"><label>入场动画</label><div class="theme-switch-group"><button id="animOnBtn" class="theme-mode-btn active">开启</button><button id="animOffBtn" class="theme-mode-btn">关闭</button></div></div>
+        <div class="setting-group"><label>加载画面时长 <span id="loadTimeVal">1.2s</span></label><input type="range" id="loadTime" min="0.1" max="2" step="0.1" value="1.2"></div>
+        <div class="setting-group"><label>动画速度 <span id="animSpeedVal">0.9s</span></label><input type="range" id="animSpeed" min="0.1" max="2" step="0.1" value="0.9"></div>
         <div class="setting-group"><label>背景主色</label><input type="color" id="bgColorPicker" value="#0a2a3f"></div>
         <div class="setting-group"><label>卡片透明度</label><input type="range" id="cardOpacity" min="0.4" max="0.85" step="0.01" value="0.7"></div>
         <div class="setting-group"><label>强调色 (蓝/金调)</label><input type="color" id="accentColor" value="#2c9cf0"></div>
@@ -261,6 +264,36 @@
 
 <!-- 开发者模态框 -->
 <div id="devModalOverlay" class="dev-modal-overlay"><div class="dev-modal"><div class="dev-modal-header"><h3>灯雪镇 · 开发人员</h3><button class="close-dev-modal" id="closeDevModalBtn">✕</button></div><div class="dev-list"><div class="dev-item"><span class="dev-role">开发者</span><span class="dev-name">Minecraft-云墨 &amp; fish</span></div><div class="dev-item"><span class="dev-role">设计师</span><span class="dev-name">Fish</span></div><div class="dev-item"><span class="dev-role">结构规划</span><span class="dev-name">TPS QMIT &amp; fish</span></div><div class="dev-item"><span class="dev-role">屎上镶金</span><span class="dev-name">🍊 我已急哭 &amp; fish</span></div><div class="dev-item"><span class="dev-role">特别鸣谢</span><span class="dev-name">Xiao_Zhinecr &amp; fish</span></div></div><div class="dev-note">感谢每一位建设灯雪镇的朋友</div></div></div>
+
+<!-- 隐私政策模态框 -->
+<div class="login-overlay" id="privacyOverlay">
+    <div class="login-modal" style="text-align:left;line-height:1.8">
+        <button class="close-login" onclick="document.getElementById('privacyOverlay').classList.remove('open')">✕</button>
+        <div class="modal-title">📜 隐私政策</div>
+        <div class="modal-sub"><span>请仔细阅读以下条款</span></div>
+        <div style="font-size:0.85rem;color:var(--text-dim);max-height:50vh;overflow-y:auto;padding-right:8px">
+            <p><strong>1. 信息收集</strong><br>我们仅收集您主动提供的电子邮箱、QQ号、游戏ID等信息，用于账号注册和社区服务。</p>
+            <p><strong>2. 信息使用</strong><br>您的邮箱仅用于账号验证、密码重置和重要通知。QQ号和游戏ID仅用于社区展示。</p>
+            <p><strong>3. 信息保护</strong><br>您的密码经过加密存储，我们不会向任何第三方出售或分享您的个人信息。</p>
+            <p><strong>4. Cookie 使用</strong><br>我们使用本地存储（LocalStorage）保存您的登录状态和主题偏好，不涉及跨站追踪。</p>
+            <p><strong>5. 账号删除</strong><br>未验证邮箱的账号将在注册5分钟后自动清除。已验证账号可联系管理员删除。</p>
+            <p><strong>6. 免责声明</strong><br>灯雪镇为 Minecraft 社区网站，用户发言仅代表个人观点。禁止发布违法、色情、暴力内容。</p>
+            <p><strong>7. 条款更新</strong><br>我们保留更新本隐私政策的权利，重大变更将通过网站公告通知。</p>
+        </div>
+        <div style="margin-top:16px;display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="privacyAgree">
+            <label for="privacyAgree" style="font-size:0.85rem;color:var(--text-dim)">我已阅读并同意隐私政策</label>
+        </div>
+        <button class="btn-primary" id="privacyConfirmBtn" style="margin-top:12px;width:100%" disabled>确认并继续</button>
+    </div>
+</div>
+
+<!-- 隐私政策底部提示条 -->
+<div id="privacyBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:998;background:var(--card-bg);backdrop-filter:blur(12px);border-top:1px solid var(--glass-border);padding:12px 20px;text-align:center;font-size:0.82rem;color:var(--text-dim)">
+    🍪 本网站使用本地存储保存您的偏好设置。继续使用即表示同意我们的
+    <a href="javascript:void(0)" onclick="document.getElementById('privacyOverlay').classList.add('open')" style="color:var(--accent-blue)">隐私政策</a>
+    <button class="btn sm primary" style="margin-left:12px" onclick="acceptPrivacy()">知道了</button>
+</div>
 
 <div id="toastMsg" class="toast-notification"> 已复制</div>
 
@@ -411,11 +444,48 @@
 
         // ---- 加载动画 ----
         const loadingScreen = document.getElementById('loadingScreen');
+        const mainContent = document.getElementById('mainContent');
+        const showAnim = localStorage.getItem('ui_anim') !== 'off';
+        const loadDuration = parseFloat(localStorage.getItem('ui_loadTime') || '1.2') * 1000;
+        const animSpeed = parseFloat(localStorage.getItem('ui_animSpeed') || '0.9');
         if(loadingScreen) {
             setTimeout(() => {
                 loadingScreen.classList.add('fade-out');
+                if(mainContent && showAnim) {
+                    mainContent.style.animationDuration = animSpeed + 's';
+                    mainContent.style.opacity = '1';
+                    mainContent.classList.add('entrance-animation');
+                } else if(mainContent) {
+                    mainContent.style.opacity = '1';
+                }
                 setTimeout(() => { loadingScreen.style.display = 'none'; }, 600);
-            }, 2000);
+            }, loadDuration);
+        } else if(mainContent) {
+            mainContent.style.opacity = '1';
+        }
+
+        // 加载画面时长滑块
+        const loadTimeSlider = document.getElementById('loadTime');
+        const loadTimeVal = document.getElementById('loadTimeVal');
+        if(loadTimeSlider) {
+            loadTimeSlider.value = parseFloat(localStorage.getItem('ui_loadTime') || '1.2');
+            loadTimeVal.textContent = loadTimeSlider.value + 's';
+            loadTimeSlider.addEventListener('input', () => {
+                loadTimeVal.textContent = loadTimeSlider.value + 's';
+                localStorage.setItem('ui_loadTime', loadTimeSlider.value);
+            });
+        }
+
+        // 动画速度滑块
+        const animSpeedSlider = document.getElementById('animSpeed');
+        const animSpeedVal = document.getElementById('animSpeedVal');
+        if(animSpeedSlider) {
+            animSpeedSlider.value = parseFloat(localStorage.getItem('ui_animSpeed') || '0.9');
+            animSpeedVal.textContent = animSpeedSlider.value + 's';
+            animSpeedSlider.addEventListener('input', () => {
+                animSpeedVal.textContent = animSpeedSlider.value + 's';
+                localStorage.setItem('ui_animSpeed', animSpeedSlider.value);
+            });
         }
 
         // ---- Toast ----
@@ -542,6 +612,15 @@
         themeLightBtn.addEventListener('click', () => setTheme('light'));
         const savedTheme = localStorage.getItem('ui_theme') || 'dark';
         if(savedTheme === 'light') setTheme('light'); else setTheme('dark');
+
+        // 入场动画开关
+        const animOnBtn = document.getElementById('animOnBtn');
+        const animOffBtn = document.getElementById('animOffBtn');
+        const animEnabled = localStorage.getItem('ui_anim') !== 'off';
+        if(animEnabled){ animOnBtn.classList.add('active'); animOffBtn.classList.remove('active'); }
+        else { animOffBtn.classList.add('active'); animOnBtn.classList.remove('active'); }
+        animOnBtn.addEventListener('click',()=>{ localStorage.setItem('ui_anim','on'); animOnBtn.classList.add('active'); animOffBtn.classList.remove('active'); });
+        animOffBtn.addEventListener('click',()=>{ localStorage.setItem('ui_anim','off'); animOffBtn.classList.add('active'); animOnBtn.classList.remove('active'); });
 
         document.querySelectorAll('.copy-btn, .copy-ip-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -983,6 +1062,20 @@
     document.addEventListener('click', startOnInteraction);
     document.addEventListener('touchstart', startOnInteraction);
     document.addEventListener('keydown', startOnInteraction);
+
+    // ===== 隐私政策 =====
+    function acceptPrivacy(){
+        localStorage.setItem('lt_privacy_accepted', '1');
+        document.getElementById('privacyBar').style.display = 'none';
+    }
+    document.getElementById('privacyConfirmBtn').addEventListener('click', acceptPrivacy);
+    document.getElementById('privacyAgree').addEventListener('change', function(){
+        document.getElementById('privacyConfirmBtn').disabled = !this.checked;
+    });
+    // 检查是否已同意
+    if(!localStorage.getItem('lt_privacy_accepted')){
+        document.getElementById('privacyBar').style.display = 'block';
+    }
 })();
 </script>
 

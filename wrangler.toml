@@ -4,6 +4,13 @@ main = "worker.js"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
+[vars]
+SUPABASE_URL = ""
+SUPABASE_SERVICE_ROLE_KEY = ""
+JWT_SECRET = ""
+EMAIL_FROM = ""
+ADMIN_EMAILS = ""
+
 [observability]
 enabled = true
 
