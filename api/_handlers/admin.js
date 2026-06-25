@@ -2,6 +2,7 @@ const { supabase, jsonRes, requireRole, getUserRole } = require('../_utils');
 
 // ===== 退信检测（QQ邮箱 IMAP） =====
 async function checkBounces() {
+    const errors = [];
     let bounces = [];
     try {
         const { ImapFlow } = require('imapflow');
@@ -13,43 +14,71 @@ async function checkBounces() {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
             },
-            logger: false
+            logger: false,
+            connectionTimeout: 15000
         });
 
         await client.connect();
-        // 打开收件箱
-        await client.mailboxOpen('INBOX');
 
-        // 搜索最近7天内来自 PostMaster@qq.com 的邮件
-        const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        const list = [];
-        for await (const msg of client.fetch({ from: 'postmaster@qq.com', since }, { uid: true, envelope: true, bodyStructure: true })) {
-            list.push(msg);
+        // 打开收件箱
+        const mailbox = await client.mailboxOpen('INBOX');
+        if (mailbox.exists === 0) {
+            await client.logout();
+            return { bounces: [], errors: ['收件箱为空'] };
         }
 
-        // 只取最近20封
-        const recent = list.slice(-20);
+        // 搜索最近30天内的邮件，取最近50封
+        const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const messages = [];
+        for await (const msg of client.fetch(
+            { since },
+            { uid: true, envelope: true, source: true, bodyStructure: true },
+            { changedSince: 0n }
+        )) {
+            // 只看来自 PostMaster 的邮件
+            const from = msg.envelope?.from?.[0]?.address || '';
+            if (!from.toLowerCase().includes('postmaster')) continue;
+            messages.push(msg);
+            if (messages.length >= 50) break;
+        }
+
+        // 取最近20封分析
+        const recent = messages.slice(-20);
         for (const msg of recent) {
             try {
-                const { data } = await client.download(msg.uid, '1');
-                const text = data.toString('utf8');
-                // 从退信内容中提取无效的收件人邮箱
+                // 尝试获取邮件正文
+                let text = '';
+                try {
+                    const { data } = await client.download(msg.uid, '1');
+                    text = typeof data === 'string' ? data : data.toString('utf8');
+                } catch (_) {
+                    // 尝试获取完整源
+                    const { source } = await client.download(msg.uid);
+                    text = source?.toString('utf8') || '';
+                }
+
                 const bounced = extractBouncedEmail(text);
                 if (bounced) {
                     bounces.push({
                         email: bounced.email,
                         reason: bounced.reason || '邮箱不存在',
+                        subject: msg.envelope?.subject || '',
                         time: msg.envelope.date?.toISOString() || ''
                     });
                 }
-            } catch (_) { /* skip */ }
+            } catch (e) {
+                errors.push('解析邮件失败: ' + e.message);
+            }
         }
 
         await client.logout();
     } catch (e) {
-        console.error('IMAP bounce check error:', e.message);
+        errors.push('IMAP连接失败: ' + (e.message || String(e)));
+        // 常见错误提示
+        if (e.message?.includes('auth')) errors.push('请确认 EMAIL_PASS 是QQ邮箱授权码而非密码');
+        if (e.message?.includes('ETIMEDOUT') || e.message?.includes('ECONN')) errors.push('无法连接QQ IMAP服务器，请检查网络');
     }
-    return bounces;
+    return { bounces, errors };
 }
 
 // 从退信正文提取无效收件人邮箱
@@ -78,21 +107,19 @@ function extractBouncedEmail(text) {
 async function cleanupUnverified() {
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     let deleted = 0;
-    let page = 1;
-    while (true) {
-        const { data } = await supabase.auth.admin.listUsers({ page, perPage: 500 });
-        const users = data?.users || [];
-        if (!users.length) break;
-        for (const u of users) {
-            if (!u.email_confirmed_at && u.created_at < fiveMinAgo) {
-                try {
+    // 只检查最新2页（1000人），避免2519人遍历导致Vercel超时
+    for (let page = 1; page <= 2; page++) {
+        try {
+            const { data } = await supabase.auth.admin.listUsers({ page, perPage: 500 });
+            const users = data?.users || [];
+            if (!users.length) break;
+            for (const u of users) {
+                if (!u.email_confirmed_at && u.created_at < fiveMinAgo) {
                     await supabase.auth.admin.deleteUser(u.id);
                     deleted++;
-                } catch (_) { /* skip */ }
+                }
             }
-        }
-        if (users.length < 500) break;
-        page++;
+        } catch (_) { break; }
     }
     return deleted;
 }
@@ -118,8 +145,14 @@ async function users(req, res) {
             }
             return jsonRes(res, 200, { message: `已删除 ${deleted} 个用户` });
         }        if (action === 'check-bounces') {
-            const bounces = await checkBounces();
-            return jsonRes(res, 200, { bounces, message: `检测到 ${bounces.length} 封退信` });
+            const result = await checkBounces();
+            return jsonRes(res, 200, { 
+                bounces: result.bounces, 
+                errors: result.errors,
+                message: result.bounces.length > 0 
+                    ? `检测到 ${result.bounces.length} 封退信` 
+                    : (result.errors.length > 0 ? result.errors[0] : '没有检测到退信')
+            });
         }        return jsonRes(res, 400, { message: '无效操作' });
     }
 

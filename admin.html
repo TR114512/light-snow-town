@@ -72,6 +72,17 @@
         <button class="btn sm danger" id="batchDeleteBtn" style="display:none">🗑 批量删除</button>
         <span class="stats" id="statsText">共 0 个用户</span>
     </div>
+    <div class="toolbar" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:0.8rem">
+        <span style="color:var(--dim);">🕐 自动清理间隔：</span>
+        <select id="cleanupInterval" style="background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;margin-right:12px;">
+            <option value="0">关闭</option>
+            <option value="1">1 分钟</option>
+            <option value="5" selected>5 分钟</option>
+            <option value="10">10 分钟</option>
+            <option value="30">30 分钟</option>
+        </select>
+        <span id="countdownText" style="color:var(--dim);"></span>
+    </div>
 
     <div class="table-wrap">
         <table>
@@ -108,6 +119,9 @@
     let operatorRole = 'user';
     let operatorEmail = '';
     let showAll = true;  // 默认显示全部，可切换为仅已验证
+    let cleanupTimer = null;
+    let cleanupCountdown = 0;
+    let cleanupIntervalMin = 5; // 默认5分钟
 
     // HTML 转义防 XSS
     function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -335,8 +349,13 @@
                 headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
                 body:JSON.stringify({action:'check-bounces'})
             });
-            if(data.bounces.length === 0){
-                toast('没有检测到退信 ✅','ok');
+            // 显示错误详情
+            if(data.errors && data.errors.length > 0){
+                toast('❌ ' + data.errors[0], 'err');
+                console.log('退信检测错误:', data.errors);
+            }
+            if(!data.bounces || data.bounces.length === 0){
+                if(!data.errors || data.errors.length === 0) toast('没有检测到退信 ✅','ok');
             } else {
                 const lines = data.bounces.map(b => `• ${b.email} — ${b.reason}`).join('\n');
                 if(confirm(`检测到 ${data.bounces.length} 封退信：\n\n${lines}\n\n是否删除这些用户？`)){
@@ -364,11 +383,73 @@
         location.href = HOME;
     });
 
+    // ---- 自动清理定时器 ----
+    async function runAutoCleanup(){
+        const token = localStorage.getItem('lt_token');
+        if(!token) return;
+        try{
+            const data = await safeFetch(API_BASE+'/admin/users',{
+                method:'POST',
+                headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                body:JSON.stringify({action:'cleanup'})
+            });
+            if(data.message && data.message.includes('已清理')){
+                const count = parseInt(data.message) || 0;
+                if(count > 0) {
+                    toast('🕐 自动清理了 ' + count + ' 个未验证账号', 'ok');
+                    loadUsers();
+                }
+            }
+        }catch(_){ /* 静默失败 */ }
+    }
+
+    function startCleanupTimer(minutes){
+        stopCleanupTimer();
+        if(!minutes || minutes <= 0){
+            document.getElementById('countdownText').textContent = '自动清理已关闭';
+            return;
+        }
+        cleanupIntervalMin = minutes;
+        cleanupCountdown = minutes * 60;
+        updateCountdown();
+        cleanupTimer = setInterval(() => {
+            cleanupCountdown--;
+            updateCountdown();
+            if(cleanupCountdown <= 0){
+                runAutoCleanup();
+                cleanupCountdown = cleanupIntervalMin * 60;
+                updateCountdown();
+            }
+        }, 1000);
+        localStorage.setItem('lt_cleanup_interval', minutes);
+    }
+
+    function stopCleanupTimer(){
+        if(cleanupTimer){ clearInterval(cleanupTimer); cleanupTimer = null; }
+    }
+
+    function updateCountdown(){
+        const m = Math.floor(cleanupCountdown / 60);
+        const s = cleanupCountdown % 60;
+        document.getElementById('countdownText').textContent = 
+            `下次清理: ${m}:${String(s).padStart(2,'0')}`;
+    }
+
+    document.getElementById('cleanupInterval').addEventListener('change', function(){
+        startCleanupTimer(parseInt(this.value));
+    });
+
     // ---- 主题同步 ----
     if(localStorage.getItem('ui_theme') === 'light') document.body.classList.add('light');
 
     // ---- 启动 ----
-    checkAuth();
+    checkAuth().then(() => {
+        // 恢复上次设置的间隔
+        const saved = parseInt(localStorage.getItem('lt_cleanup_interval'));
+        const interval = saved || 5;
+        document.getElementById('cleanupInterval').value = interval;
+        if(interval > 0) startCleanupTimer(interval);
+    });
 })();
 </script>
 </body>
