@@ -107,19 +107,16 @@ function extractBouncedEmail(text) {
 async function cleanupUnverified() {
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     let deleted = 0;
-    // 只检查最新2页（1000人），避免2519人遍历导致Vercel超时
-    for (let page = 1; page <= 2; page++) {
-        try {
-            const { data } = await supabase.auth.admin.listUsers({ page, perPage: 500 });
-            const users = data?.users || [];
-            if (!users.length) break;
-            for (const u of users) {
-                if (!u.email_confirmed_at && u.created_at < fiveMinAgo) {
-                    await supabase.auth.admin.deleteUser(u.id);
-                    deleted++;
-                }
-            }
-        } catch (_) { break; }
+    // 只检查最新100个用户
+    const { data } = await supabase.auth.admin.listUsers({ page: 1, perPage: 100 });
+    const users = data?.users || [];
+    for (const u of users) {
+        if (!u.email_confirmed_at && u.created_at < fiveMinAgo) {
+            try {
+                await supabase.auth.admin.deleteUser(u.id);
+                deleted++;
+            } catch (_) { /* skip */ }
+        }
     }
     return deleted;
 }

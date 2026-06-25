@@ -29,15 +29,27 @@ const BLOCKED_DOMAINS = ['mailinator.com','tempmail.com','10minutemail.com','gue
 
 async function checkRateLimit(ip) {
     try {
-        const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-        await supabase.from('reg_attempts').delete().lt('created_at', tenMinAgo);
-        const { count } = await supabase.from('reg_attempts').select('*', { count: 'exact', head: true }).eq('ip', ip).gte('created_at', tenMinAgo);
-        return (count || 0) >= 5;
-    } catch (_) { return false; }
+        const now = new Date();
+
+        // 10分钟限制：最多5次
+        const tenMinAgo = new Date(now - 10 * 60 * 1000).toISOString();
+        const { count: recent } = await supabase.from('reg_attempts').select('*', { count: 'exact', head: true }).eq('ip', ip).gte('created_at', tenMinAgo);
+        if ((recent || 0) >= 5) return { blocked: true, reason: '操作太频繁，请10分钟后再试' };
+
+        // 24小时限制：最多15次，超过则封禁24小时
+        const dayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+        const { count: daily } = await supabase.from('reg_attempts').select('*', { count: 'exact', head: true }).eq('ip', ip).gte('created_at', dayAgo);
+        if ((daily || 0) >= 15) return { blocked: true, reason: '该IP注册过于频繁，已封禁24小时' };
+
+        return { blocked: false };
+    } catch (_) { return { blocked: false }; }
 }
 
 async function recordAttempt(ip, email) {
     try {
+        // 同时清理24小时前的旧记录，避免表无限增长
+        const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        await supabase.from('reg_attempts').delete().lt('created_at', dayAgo);
         await supabase.from('reg_attempts').insert({ ip, email, created_at: new Date().toISOString() });
     } catch (_) { /* 表不存在则跳过 */ }
 }
@@ -69,8 +81,9 @@ async function register(req, res) {
 
     // IP 频率限制
     const ip = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
-    if (await checkRateLimit(ip)) {
-        return jsonRes(res, 429, { message: '操作太频繁，请10分钟后再试' });
+    const rateCheck = await checkRateLimit(ip);
+    if (rateCheck.blocked) {
+        return jsonRes(res, 429, { message: rateCheck.reason });
     }
 
     // 输入验证：防注入 + 长度限制
