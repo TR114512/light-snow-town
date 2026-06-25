@@ -48,9 +48,6 @@ async function users(req, res) {
     }
 
     try {
-        // 先清理过期未验证账号
-        await cleanupUnverified();
-
         // 分页拉取全部用户（默认仅 50 条）
         let allUsers = [];
         let page = 1;
