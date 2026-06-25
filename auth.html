@@ -555,6 +555,11 @@
                             <div class="captcha-box" id="regCaptchaBox" title="点击刷新">X9F3</div>
                         </div>
                     </div>
+                    <!-- 蜜罐：机器人会填，人类看不到 -->
+                    <div style="position:absolute;left:-9999px;" aria-hidden="true">
+                        <input type="text" name="_website" tabindex="-1" autocomplete="off">
+                    </div>
+                    <input type="hidden" id="regTs" name="_ts">
                     <button type="submit" class="btn-primary" id="regBtn">注 册</button>
                     <div class="form-hint" style="text-align:center; margin-top:8px;">注册后请查收邮箱验证，未验证账号将被自动清除</div>
                     <div class="form-hint" style="color:#f5b042;text-align:center;">⚠️ 请在5分钟内完成验证</div>
@@ -838,7 +843,10 @@
                 }
 
                 try {
-                    const data = await apiCall('register', { email, password: pwd });
+                    const website = document.querySelector('input[name="_website"]')?.value || '';
+                    const ts = String(Date.now());
+                    $('regTs').value = ts;
+                    const data = await apiCall('register', { email, password: pwd, _website: website, _ts: ts });
                     showToast(data.message || '注册成功，请查收确认邮件', 'success');
                     showView('login');
                     $('loginEmail').value = email;

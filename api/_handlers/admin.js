@@ -1,5 +1,79 @@
 const { supabase, jsonRes, requireRole, getUserRole } = require('../_utils');
 
+// ===== 退信检测（QQ邮箱 IMAP） =====
+async function checkBounces() {
+    let bounces = [];
+    try {
+        const { ImapFlow } = require('imapflow');
+        const client = new ImapFlow({
+            host: 'imap.qq.com',
+            port: 993,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            },
+            logger: false
+        });
+
+        await client.connect();
+        // 打开收件箱
+        await client.mailboxOpen('INBOX');
+
+        // 搜索最近7天内来自 PostMaster@qq.com 的邮件
+        const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const list = [];
+        for await (const msg of client.fetch({ from: 'postmaster@qq.com', since }, { uid: true, envelope: true, bodyStructure: true })) {
+            list.push(msg);
+        }
+
+        // 只取最近20封
+        const recent = list.slice(-20);
+        for (const msg of recent) {
+            try {
+                const { data } = await client.download(msg.uid, '1');
+                const text = data.toString('utf8');
+                // 从退信内容中提取无效的收件人邮箱
+                const bounced = extractBouncedEmail(text);
+                if (bounced) {
+                    bounces.push({
+                        email: bounced.email,
+                        reason: bounced.reason || '邮箱不存在',
+                        time: msg.envelope.date?.toISOString() || ''
+                    });
+                }
+            } catch (_) { /* skip */ }
+        }
+
+        await client.logout();
+    } catch (e) {
+        console.error('IMAP bounce check error:', e.message);
+    }
+    return bounces;
+}
+
+// 从退信正文提取无效收件人邮箱
+function extractBouncedEmail(text) {
+    // QQ退信格式: "无法发送到 xxx@xxx.com" 或 "收件人邮件地址（xxx@xxx.com）不存在"
+    const patterns = [
+        /无法发送到[：:\s]*([^\s<]+@[^\s>]+)/,
+        /收件人[邮件地址]*[（(]([^\s)]+@[^\s)]+)/,
+        /<([^>]+@[^>]+)>[^<]*不存在/,
+        /投递失败[：:]\s*([^\s]+@[^\s]+)/,
+        /mailbox\s+not\s+found.*?([^\s]+@[^\s]+)/i,
+        /user\s+not\s+found.*?([^\s]+@[^\s]+)/i,
+        /address\s+rejected.*?([^\s]+@[^\s]+)/i,
+    ];
+    for (const re of patterns) {
+        const m = text.match(re);
+        if (m) return { email: m[1].replace(/[<>]/g, ''), reason: '邮箱不存在或无法接收' };
+    }
+    // 也尝试匹配 Subject 行中的邮箱
+    const subjMatch = text.match(/Subject:.*?([^\s<>]+@[^\s<>]+)/);
+    if (subjMatch) return { email: subjMatch[1], reason: '投递失败' };
+    return null;
+}
+
 // ===== 辅助：清理超过5分钟未验证的账号 =====
 async function cleanupUnverified() {
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
@@ -43,8 +117,10 @@ async function users(req, res) {
                 catch (_) { /* skip */ }
             }
             return jsonRes(res, 200, { message: `已删除 ${deleted} 个用户` });
-        }
-        return jsonRes(res, 400, { message: '无效操作' });
+        }        if (action === 'check-bounces') {
+            const bounces = await checkBounces();
+            return jsonRes(res, 200, { bounces, message: `检测到 ${bounces.length} 封退信` });
+        }        return jsonRes(res, 400, { message: '无效操作' });
     }
 
     try {
@@ -94,6 +170,9 @@ async function users(req, res) {
             const q = search.toLowerCase();
             filtered = filtered.filter(u => u.email.toLowerCase().includes(q));
         }
+
+        // 按注册时间排序，保证编号稳定
+        filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
         jsonRes(res, 200, {
             total: filtered.length,

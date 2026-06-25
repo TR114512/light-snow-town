@@ -24,18 +24,62 @@ async function login(req, res) {
     }
 }
 
+// ===== 注册反机器人保护 =====
+const BLOCKED_DOMAINS = ['mailinator.com','tempmail.com','10minutemail.com','guerrillamail.com','sharklasers.com','yopmail.com','throwaway.email','trashmail.com','temp-mail.org','fakeinbox.com'];
+
+async function checkRateLimit(ip) {
+    try {
+        const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+        await supabase.from('reg_attempts').delete().lt('created_at', tenMinAgo);
+        const { count } = await supabase.from('reg_attempts').select('*', { count: 'exact', head: true }).eq('ip', ip).gte('created_at', tenMinAgo);
+        return (count || 0) >= 5;
+    } catch (_) { return false; }
+}
+
+async function recordAttempt(ip, email) {
+    try {
+        await supabase.from('reg_attempts').insert({ ip, email, created_at: new Date().toISOString() });
+    } catch (_) { /* 表不存在则跳过 */ }
+}
+
 // ===== 注册 =====
 async function register(req, res) {
     if (req.method !== 'POST') return jsonRes(res, 405, { message: 'Method not allowed' });
 
-    const { email, password, qq, game_id } = req.body;
+    const { email, password, qq, game_id, _website, _ts } = req.body;
     if (!email || !password) return jsonRes(res, 400, { message: '请填写完整信息' });
+
+    // 蜜罐字段：机器人会自动填写隐藏字段
+    if (_website && _website.length > 0) {
+        // 静默返回成功，迷惑机器人
+        return jsonRes(res, 201, { message: '注册成功！验证码已发送至您的邮箱', user: { email, id: 'fake' } });
+    }
+
+    // 时间戳检查：表单提交必须花费至少2秒（机器人通常瞬间提交）
+    const now = Date.now();
+    if (_ts && (now - parseInt(_ts) < 2000 || now - parseInt(_ts) > 600000)) {
+        return jsonRes(res, 400, { message: '请稍后再试' });
+    }
+
+    // 邮箱域名检查
+    const domain = (email || '').split('@')[1]?.toLowerCase();
+    if (domain && BLOCKED_DOMAINS.includes(domain)) {
+        return jsonRes(res, 400, { message: '请使用常用邮箱注册' });
+    }
+
+    // IP 频率限制
+    const ip = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
+    if (await checkRateLimit(ip)) {
+        return jsonRes(res, 429, { message: '操作太频繁，请10分钟后再试' });
+    }
 
     // 输入验证：防注入 + 长度限制
     const safeQQ = String(qq || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
     const safeGameId = String(game_id || '').replace(/[<>]/g, '').slice(0, 32);
 
     try {
+        await recordAttempt(ip, email);
+
         const { data, error } = await supabase.auth.admin.createUser({
             email,
             password,

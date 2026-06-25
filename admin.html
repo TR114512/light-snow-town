@@ -68,6 +68,7 @@
         <input class="search-box" id="searchInput" placeholder="🔍 搜索用户邮箱...">
         <button class="btn sm" id="toggleUnverified">📋 仅已验证</button>
         <button class="btn sm danger" id="cleanupBtn">🧹 清理未验证</button>
+        <button class="btn sm" id="bounceBtn">📧 检测退信</button>
         <button class="btn sm danger" id="batchDeleteBtn" style="display:none">🗑 批量删除</button>
         <span class="stats" id="statsText">共 0 个用户</span>
     </div>
@@ -320,6 +321,42 @@
             toast(data.message,'ok');
             loadUsers();
         }catch(e){ toast(e.message,'err'); }
+    });
+
+    // 检测退信
+    document.getElementById('bounceBtn').addEventListener('click',async function(){
+        const btn = this;
+        btn.disabled = true;
+        btn.textContent = '📧 检测中...';
+        const token = localStorage.getItem('lt_token');
+        try{
+            const data = await safeFetch(API_BASE+'/admin/users',{
+                method:'POST',
+                headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                body:JSON.stringify({action:'check-bounces'})
+            });
+            if(data.bounces.length === 0){
+                toast('没有检测到退信 ✅','ok');
+            } else {
+                const lines = data.bounces.map(b => `• ${b.email} — ${b.reason}`).join('\n');
+                if(confirm(`检测到 ${data.bounces.length} 封退信：\n\n${lines}\n\n是否删除这些用户？`)){
+                    const allUsers = await safeFetch(API_BASE+'/admin/users',{headers:{'Authorization':'Bearer '+token}});
+                    const bouncedEmails = new Set(data.bounces.map(b => b.email.toLowerCase()));
+                    const toDelete = allUsers.users.filter(u => bouncedEmails.has(u.email.toLowerCase())).map(u => u.id);
+                    if(toDelete.length){
+                        await safeFetch(API_BASE+'/admin/users',{
+                            method:'POST',
+                            headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                            body:JSON.stringify({action:'batch-delete',userIds:toDelete})
+                        });
+                        toast(`已删除 ${toDelete.length} 个退信用户`,'ok');
+                        loadUsers();
+                    }
+                }
+            }
+        }catch(e){ toast(e.message,'err'); }
+        btn.disabled = false;
+        btn.textContent = '📧 检测退信';
     });
     document.getElementById('logoutBtn').addEventListener('click',function(){
         localStorage.removeItem('lt_token');

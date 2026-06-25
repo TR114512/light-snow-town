@@ -316,6 +316,11 @@
                     <label>游戏内 ID（选填）</label>
                     <input type="text" class="form-control" id="regGameIdModal" placeholder="Minecraft 游戏ID">
                 </div>
+                <!-- 蜜罐：机器人会填，人类看不到 -->
+                <div style="position:absolute;left:-9999px;" aria-hidden="true">
+                    <input type="text" name="_website" tabindex="-1" autocomplete="off">
+                </div>
+                <input type="hidden" id="regTsModal" name="_ts">
                 <div class="form-group" id="regCodeGroupModal" style="display:none;">
                     <label>📧 验证码（注册成功后显示在下方）</label>
                     <div class="code-row">
@@ -683,7 +688,10 @@
             try {
                 const qq = document.getElementById('regQQModal').value.trim();
                 const gameId = document.getElementById('regGameIdModal').value.trim();
-                const data = await apiCall('register', { email, password: pwd, qq, game_id: gameId });
+                const website = document.querySelector('input[name="_website"]')?.value || '';
+                const ts = String(Date.now());
+                document.getElementById('regTsModal').value = ts;
+                const data = await apiCall('register', { email, password: pwd, qq, game_id: gameId, _website: website, _ts: ts });
                 // 暂存密码用于验证后自动登录
                 document.getElementById('regPasswordModal').setAttribute('data-pwd', pwd);
                 // 显示验证码输入框，提示查邮箱
