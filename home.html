@@ -267,31 +267,30 @@
 <!-- 隐私政策模态框 -->
 <div class="login-overlay" id="privacyOverlay">
     <div class="login-modal" style="text-align:left;line-height:1.8">
-        <button class="close-login" onclick="document.getElementById('privacyOverlay').classList.remove('open')">✕</button>
-        <div class="modal-title">📜 隐私政策</div>
-        <div class="modal-sub"><span>请仔细阅读以下条款</span></div>
-        <div style="font-size:0.85rem;color:var(--text-dim);max-height:50vh;overflow-y:auto;padding-right:8px">
-            <p><strong>1. 信息收集</strong><br>我们仅收集您主动提供的电子邮箱、QQ号、游戏ID等信息，用于账号注册和社区服务。</p>
-            <p><strong>2. 信息使用</strong><br>您的邮箱仅用于账号验证、密码重置和重要通知。QQ号和游戏ID仅用于社区展示。</p>
-            <p><strong>3. 信息保护</strong><br>您的密码经过加密存储，我们不会向任何第三方出售或分享您的个人信息。</p>
-            <p><strong>4. Cookie 使用</strong><br>我们使用本地存储（LocalStorage）保存您的登录状态和主题偏好，不涉及跨站追踪。</p>
-            <p><strong>5. 账号删除</strong><br>未验证邮箱的账号将在注册5分钟后自动清除。已验证账号可联系管理员删除。</p>
-            <p><strong>6. 免责声明</strong><br>灯雪镇为 Minecraft 社区网站，用户发言仅代表个人观点。禁止发布违法、色情、暴力内容。</p>
-            <p><strong>7. 条款更新</strong><br>我们保留更新本隐私政策的权利，重大变更将通过网站公告通知。</p>
+        <button class="close-login" id="privacyCloseBtn">✕</button>
+        <div class="modal-title" style="font-size:1.8rem;font-weight:800;color:var(--text-main);background:none;-webkit-text-fill-color:var(--text-main)">📜 隐私与条款</div>
+        <div class="modal-sub"><span>请仔细阅读以下内容</span></div>
+        <div style="font-size:0.85rem;color:var(--text-main);max-height:45vh;overflow-y:auto;padding-right:8px">
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">1. 信息收集</strong><br>我们仅收集您主动提供的电子邮箱、QQ号、游戏ID等信息，用于账号注册和社区服务。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">2. 信息使用</strong><br>您的邮箱仅用于账号验证、密码重置和重要通知。QQ号和游戏ID仅用于社区展示。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">3. 信息保护</strong><br>您的密码经过加密存储，我们不会向任何第三方出售或分享您的个人信息。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">4. Cookie 与本地存储</strong><br>我们使用本地存储（LocalStorage）保存您的登录状态、主题偏好和设置选项，不涉及跨站追踪。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">5. 账号管理</strong><br>未验证邮箱的账号将在注册5分钟后自动清除。已验证账号可联系管理员删除。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">6. 社区规范</strong><br>灯雪镇为 Minecraft 社区网站，禁止发布违法、色情、暴力、人身攻击等内容。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">7. 免责声明</strong><br>用户发言仅代表个人观点，与本站立场无关。我们保留更新本政策的权利。</p>
         </div>
-        <div style="margin-top:16px;display:flex;align-items:center;gap:8px">
-            <input type="checkbox" id="privacyAgree">
-            <label for="privacyAgree" style="font-size:0.85rem;color:var(--text-dim)">我已阅读并同意隐私政策</label>
+        <div style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px">
+            <input type="checkbox" id="privacyAgree" style="width:16px;height:16px;accent-color:var(--accent-blue)">
+            <label for="privacyAgree" style="font-size:0.85rem;color:var(--text-main);cursor:pointer">我已阅读并同意以上条款</label>
         </div>
         <button class="btn-primary" id="privacyConfirmBtn" style="margin-top:12px;width:100%" disabled>确认并继续</button>
+        <button class="btn" id="privacyDenyBtn" style="margin-top:8px;width:100%;color:var(--danger);border-color:transparent;background:transparent">不同意，仅浏览</button>
     </div>
 </div>
 
-<!-- 隐私政策底部提示条 -->
-<div id="privacyBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:998;background:var(--card-bg);backdrop-filter:blur(12px);border-top:1px solid var(--glass-border);padding:12px 20px;text-align:center;font-size:0.82rem;color:var(--text-dim)">
-    🍪 本网站使用本地存储保存您的偏好设置。继续使用即表示同意我们的
-    <a href="javascript:void(0)" onclick="document.getElementById('privacyOverlay').classList.add('open')" style="color:var(--accent-blue)">隐私政策</a>
-    <button class="btn sm primary" style="margin-left:12px" onclick="acceptPrivacy()">知道了</button>
+<div id="privacyBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:998;background:var(--drawer-bg);backdrop-filter:blur(12px);border-top:2px solid var(--accent-blue);padding:10px 20px;text-align:center;font-size:0.8rem;color:var(--text-main)">
+    <span style="opacity:0.8">🍪 本站使用本地存储保存您的偏好，继续使用即表示同意</span>
+    <a href="javascript:void(0)" onclick="document.getElementById('privacyOverlay').classList.add('open')" style="color:var(--accent-blue);margin-left:6px">隐私政策</a>
 </div>
 
 <div id="toastMsg" class="toast-notification"> 已复制</div>
@@ -451,8 +450,6 @@
             setTimeout(() => {
                 loadingScreen.classList.add('fade-out');
                 if(mainContent && showAnim) {
-                    mainContent.style.animationDuration = animSpeed + 's';
-                    mainContent.style.opacity = '1';
                     mainContent.classList.add('entrance-animation');
                 } else if(mainContent) {
                     mainContent.style.opacity = '1';
@@ -476,13 +473,18 @@
 
         const animSpeedSlider = document.getElementById('animSpeed');
         const animSpeedVal = document.getElementById('animSpeedVal');
+        const animStyle = document.createElement('style');
+        document.head.appendChild(animStyle);
+        function updateAnimSpeed(val){
+            animStyle.textContent = `.entrance-animation{animation-duration:${val}s!important}`;
+            animSpeedVal.textContent = val + 's';
+            localStorage.setItem('ui_animSpeed', val);
+        }
         if(animSpeedSlider) {
-            animSpeedSlider.value = parseFloat(localStorage.getItem('ui_animSpeed') || '0.9');
-            animSpeedVal.textContent = animSpeedSlider.value + 's';
-            animSpeedSlider.addEventListener('input', () => {
-                animSpeedVal.textContent = animSpeedSlider.value + 's';
-                localStorage.setItem('ui_animSpeed', animSpeedSlider.value);
-            });
+            const saved = localStorage.getItem('ui_animSpeed') || '0.9';
+            animSpeedSlider.value = saved;
+            updateAnimSpeed(saved);
+            animSpeedSlider.addEventListener('input', () => updateAnimSpeed(animSpeedSlider.value));
         }
 
         // ---- Toast ----
@@ -706,7 +708,14 @@
             document.body.style.overflow = '';
         }
 
-        authToggleBtn.addEventListener('click', openLoginModal);
+        authToggleBtn.addEventListener('click', function(){
+            if(!privacyAccepted){
+                if(privacyOverlay) privacyOverlay.classList.add('open');
+                showToast('请先同意隐私政策', 'error');
+                return;
+            }
+            openLoginModal();
+        });
         closeLoginBtn.addEventListener('click', closeLoginModal);
         loginOverlay.addEventListener('click', (e) => {
             if (e.target === loginOverlay) closeLoginModal();
@@ -1061,17 +1070,36 @@
     document.addEventListener('keydown', startOnInteraction);
 
     // ===== 隐私政策 =====
+    let privacyAccepted = localStorage.getItem('lt_privacy_accepted') === '1';
+    const privacyOverlay = document.getElementById('privacyOverlay');
+    const privacyBar = document.getElementById('privacyBar');
+    const privacyCheck = document.getElementById('privacyAgree');
+    const confirmBtn = document.getElementById('privacyConfirmBtn');
+
     function acceptPrivacy(){
         localStorage.setItem('lt_privacy_accepted', '1');
-        document.getElementById('privacyBar').style.display = 'none';
+        privacyAccepted = true;
+        if(privacyOverlay) privacyOverlay.classList.remove('open');
+        if(privacyBar) privacyBar.style.display = 'block';
     }
-    document.getElementById('privacyConfirmBtn').addEventListener('click', acceptPrivacy);
-    document.getElementById('privacyAgree').addEventListener('change', function(){
-        document.getElementById('privacyConfirmBtn').disabled = !this.checked;
-    });
-    if(!localStorage.getItem('lt_privacy_accepted')){
-        document.getElementById('privacyBar').style.display = 'block';
+
+    if(confirmBtn) confirmBtn.addEventListener('click', acceptPrivacy);
+    if(privacyCheck) privacyCheck.addEventListener('change', function(){ confirmBtn.disabled = !this.checked; });
+    if(document.getElementById('privacyDenyBtn')) {
+        document.getElementById('privacyDenyBtn').addEventListener('click', function(){
+            if(privacyOverlay) privacyOverlay.classList.remove('open');
+            if(privacyBar) privacyBar.style.display = 'block';
+        });
     }
+    if(document.getElementById('privacyCloseBtn')) {
+        document.getElementById('privacyCloseBtn').addEventListener('click', function(){
+            if(privacyOverlay) privacyOverlay.classList.remove('open');
+            if(!privacyAccepted && privacyBar) privacyBar.style.display = 'block';
+        });
+    }
+    if(!privacyAccepted && privacyOverlay) privacyOverlay.classList.add('open');
+    else if(privacyBar) privacyBar.style.display = 'block';
+    window.isPrivacyAccepted = function(){ return privacyAccepted; };
 })();
 </script>
 
