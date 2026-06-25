@@ -67,6 +67,8 @@
     <div class="toolbar">
         <input class="search-box" id="searchInput" placeholder="🔍 搜索用户邮箱...">
         <button class="btn sm" id="toggleUnverified">📋 仅已验证</button>
+        <button class="btn sm danger" id="cleanupBtn">🧹 清理未验证</button>
+        <button class="btn sm danger" id="batchDeleteBtn" style="display:none">🗑 批量删除</button>
         <span class="stats" id="statsText">共 0 个用户</span>
     </div>
 
@@ -74,6 +76,8 @@
         <table>
             <thead>
                 <tr>
+                    <th style="width:30px"><input type="checkbox" id="selectAll" title="全选"></th>
+                    <th style="width:40px">#</th>
                     <th>邮箱</th>
                     <th>QQ</th>
                     <th>游戏ID</th>
@@ -84,7 +88,7 @@
                 </tr>
             </thead>
             <tbody id="userTableBody">
-                <tr><td colspan="7" class="loading">加载中...</td></tr>
+                <tr><td colspan="10" class="loading">加载中...</td></tr>
             </tbody>
         </table>
     </div>
@@ -102,7 +106,7 @@
 
     let operatorRole = 'user';
     let operatorEmail = '';
-    let showAll = false;  // 默认只显示已验证用户
+    let showAll = true;  // 默认显示全部，可切换为仅已验证
 
     // HTML 转义防 XSS
     function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -162,14 +166,14 @@
             let url = API_BASE + '/admin/users';
             const params = [];
             if(search) params.push('search=' + encodeURIComponent(search));
-            if(showAll) params.push('all=1');
+            if(!showAll) params.push('verified=1');
             if(params.length) url += '?' + params.join('&');
             const data = await safeFetch(url, {headers:{'Authorization':'Bearer '+token}});
 
             document.getElementById('statsText').textContent = '共 ' + data.total + ' 个用户';
 
             if(data.users.length === 0){
-                tbody.innerHTML = '<tr><td colspan="7" class="loading">没有匹配用户</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="loading">没有匹配用户</td></tr>';
                 return;
             }
 
@@ -197,6 +201,8 @@
                 }
 
                 return `<tr>
+                    <td><input type="checkbox" class="user-check" data-userid="${eId}" ${isSelf?'disabled':''}></td>
+                    <td style="color:var(--dim);font-size:0.8rem">${u.user_no}</td>
                     <td><strong>${eEmail}</strong>${isSelf?' <span style="font-size:0.7rem;opacity:0.5;">(你)</span>':''}</td>
                     <td style="font-size:0.82rem;">${eQQ || '<span style="color:var(--dim);opacity:0.5;">-</span>'}</td>
                     <td style="font-size:0.82rem;">${eGameId || '<span style="color:var(--dim);opacity:0.5;">-</span>'}</td>
@@ -209,9 +215,22 @@
                     </div></td>
                 </tr>`;
             }).join('');
+
+            // 全选逻辑
+            document.getElementById('selectAll').onchange = function(){
+                document.querySelectorAll('.user-check:not([disabled])').forEach(cb => cb.checked = this.checked);
+                updateBatchBtn();
+            };
+            document.querySelectorAll('.user-check').forEach(cb => cb.addEventListener('change', updateBatchBtn));
         }catch(e){
-            tbody.innerHTML = `<tr><td colspan="7" class="loading" style="color:var(--danger)">${e.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="10" class="loading" style="color:var(--danger)">${e.message}</td></tr>`;
         }
+    }
+
+    // 批量删除按钮显示/隐藏
+    function updateBatchBtn(){
+        const checked = document.querySelectorAll('.user-check:checked').length;
+        document.getElementById('batchDeleteBtn').style.display = checked > 0 ? 'inline-block' : 'none';
     }
 
     // ---- 设置角色 ----
@@ -266,8 +285,41 @@
     });
     document.getElementById('toggleUnverified').addEventListener('click',function(){
         showAll = !showAll;
-        this.textContent = showAll ? '📋 显示全部' : '📋 仅已验证';
+        this.textContent = showAll ? '📋 仅已验证' : '📋 显示全部';
         loadUsers(document.getElementById('searchInput').value.trim());
+    });
+
+    // 清理未验证
+    document.getElementById('cleanupBtn').addEventListener('click',async function(){
+        if(!confirm('删除所有超过5分钟未验证邮箱的账号？')) return;
+        const token = localStorage.getItem('lt_token');
+        try{
+            const data = await safeFetch(API_BASE+'/admin/users',{
+                method:'POST',
+                headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                body:JSON.stringify({action:'cleanup'})
+            });
+            toast(data.message,'ok');
+            loadUsers();
+        }catch(e){ toast(e.message,'err'); }
+    });
+
+    // 批量删除
+    document.getElementById('batchDeleteBtn').addEventListener('click',async function(){
+        const checked = [...document.querySelectorAll('.user-check:checked')];
+        if(!checked.length) return;
+        if(!confirm(`确定删除选中的 ${checked.length} 个用户？`)) return;
+        const userIds = checked.map(cb => cb.dataset.userid);
+        const token = localStorage.getItem('lt_token');
+        try{
+            const data = await safeFetch(API_BASE+'/admin/users',{
+                method:'POST',
+                headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                body:JSON.stringify({action:'batch-delete',userIds})
+            });
+            toast(data.message,'ok');
+            loadUsers();
+        }catch(e){ toast(e.message,'err'); }
     });
     document.getElementById('logoutBtn').addEventListener('click',function(){
         localStorage.removeItem('lt_token');

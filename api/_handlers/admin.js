@@ -1,14 +1,68 @@
 const { supabase, jsonRes, requireRole, getUserRole } = require('../_utils');
 
+// ===== 辅助：清理超过5分钟未验证的账号 =====
+async function cleanupUnverified() {
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    let deleted = 0;
+    let page = 1;
+    while (true) {
+        const { data } = await supabase.auth.admin.listUsers({ page, perPage: 500 });
+        const users = data?.users || [];
+        if (!users.length) break;
+        for (const u of users) {
+            if (!u.email_confirmed_at && u.created_at < fiveMinAgo) {
+                try {
+                    await supabase.auth.admin.deleteUser(u.id);
+                    deleted++;
+                } catch (_) { /* skip */ }
+            }
+        }
+        if (users.length < 500) break;
+        page++;
+    }
+    return deleted;
+}
+
 // ===== 用户列表 =====
 async function users(req, res) {
     const operator = await requireRole(req, res, 'admin');
     if (!operator) return;
 
-    try {
-        const { data: { users }, error } = await supabase.auth.admin.listUsers();
+    // POST：批量删除或清理
+    if (req.method === 'POST') {
+        const { action, userIds } = req.body || {};
+        if (action === 'cleanup') {
+            const count = await cleanupUnverified();
+            return jsonRes(res, 200, { message: `已清理 ${count} 个未验证账号` });
+        }
+        if (action === 'batch-delete' && Array.isArray(userIds) && userIds.length) {
+            let deleted = 0;
+            for (const uid of userIds) {
+                if (uid === operator.id) continue; // 不能删自己
+                try { await supabase.auth.admin.deleteUser(uid); deleted++; }
+                catch (_) { /* skip */ }
+            }
+            return jsonRes(res, 200, { message: `已删除 ${deleted} 个用户` });
+        }
+        return jsonRes(res, 400, { message: '无效操作' });
+    }
 
-        if (error) return jsonRes(res, 500, { message: error.message });
+    try {
+        // 先清理过期未验证账号
+        await cleanupUnverified();
+
+        // 分页拉取全部用户（默认仅 50 条）
+        let allUsers = [];
+        let page = 1;
+        const perPage = 500;
+        while (true) {
+            const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+            if (error) return jsonRes(res, 500, { message: error.message });
+            const batch = data?.users || [];
+            allUsers = allUsers.concat(batch);
+            if (batch.length < perPage) break;
+            page++;
+        }
 
         const { data: profiles } = await supabase
             .from('profiles')
@@ -19,7 +73,7 @@ async function users(req, res) {
             profiles.forEach(p => { roleMap[p.id] = { role: p.role, display_name: p.display_name, qq: p.qq, game_id: p.game_id }; });
         }
 
-        const userList = users.map(u => ({
+        const userList = allUsers.map(u => ({
             id: u.id,
             email: u.email,
             role: (u.user_metadata && u.user_metadata.role) || roleMap[u.id]?.role || 'user',
@@ -31,11 +85,11 @@ async function users(req, res) {
             last_sign_in: u.last_sign_in_at
         }));
 
-        const { search, all } = req.query || {};
+        const { search, all, verified } = req.query || {};
         let filtered = userList;
 
-        // 默认只显示已验证用户，?all=1 显示全部
-        if (all !== '1') {
+        // ?verified=1 只看已验证
+        if (verified === '1') {
             filtered = filtered.filter(u => u.email_confirmed);
         }
 
@@ -47,7 +101,7 @@ async function users(req, res) {
         jsonRes(res, 200, {
             total: filtered.length,
             operator_role: operator.role,
-            users: filtered
+            users: filtered.map((u, i) => ({ ...u, user_no: i + 1 }))
         });
     } catch (err) {
         console.error('List users error:', err);
