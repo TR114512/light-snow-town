@@ -1,106 +1,16 @@
 const { supabase, jsonRes, requireRole, getUserRole } = require('../_utils');
 
-// ===== 退信检测（QQ邮箱 IMAP） =====
-async function checkBounces() {
-    const errors = [];
-    let bounces = [];
+// ===== 操作日志 =====
+async function logAudit(operator, action, target) {
     try {
-        const { ImapFlow } = require('imapflow');
-        const client = new ImapFlow({
-            host: 'imap.qq.com',
-            port: 993,
-            secure: true,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            },
-            logger: false,
-            connectionTimeout: 15000
+        await supabase.from('audit_logs').insert({
+            operator_email: operator.email,
+            operator_id: operator.id,
+            action,
+            target: target || null,
+            created_at: new Date().toISOString()
         });
-
-        await client.connect();
-
-        // 打开收件箱
-        const mailbox = await client.mailboxOpen('INBOX');
-        if (mailbox.exists === 0) {
-            await client.logout();
-            return { bounces: [], errors: ['收件箱为空'] };
-        }
-
-        // 搜索最近30天内的邮件，取最近50封
-        const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const messages = [];
-        for await (const msg of client.fetch(
-            { since },
-            { uid: true, envelope: true, source: true, bodyStructure: true },
-            { changedSince: 0n }
-        )) {
-            // 只看来自 PostMaster 的邮件
-            const from = msg.envelope?.from?.[0]?.address || '';
-            if (!from.toLowerCase().includes('postmaster')) continue;
-            messages.push(msg);
-            if (messages.length >= 50) break;
-        }
-
-        // 取最近20封分析
-        const recent = messages.slice(-20);
-        for (const msg of recent) {
-            try {
-                // 尝试获取邮件正文
-                let text = '';
-                try {
-                    const { data } = await client.download(msg.uid, '1');
-                    text = typeof data === 'string' ? data : data.toString('utf8');
-                } catch (_) {
-                    // 尝试获取完整源
-                    const { source } = await client.download(msg.uid);
-                    text = source?.toString('utf8') || '';
-                }
-
-                const bounced = extractBouncedEmail(text);
-                if (bounced) {
-                    bounces.push({
-                        email: bounced.email,
-                        reason: bounced.reason || '邮箱不存在',
-                        subject: msg.envelope?.subject || '',
-                        time: msg.envelope.date?.toISOString() || ''
-                    });
-                }
-            } catch (e) {
-                errors.push('解析邮件失败: ' + e.message);
-            }
-        }
-
-        await client.logout();
-    } catch (e) {
-        errors.push('IMAP连接失败: ' + (e.message || String(e)));
-        // 常见错误提示
-        if (e.message?.includes('auth')) errors.push('请确认 EMAIL_PASS 是QQ邮箱授权码而非密码');
-        if (e.message?.includes('ETIMEDOUT') || e.message?.includes('ECONN')) errors.push('无法连接QQ IMAP服务器，请检查网络');
-    }
-    return { bounces, errors };
-}
-
-// 从退信正文提取无效收件人邮箱
-function extractBouncedEmail(text) {
-    // QQ退信格式: "无法发送到 xxx@xxx.com" 或 "收件人邮件地址（xxx@xxx.com）不存在"
-    const patterns = [
-        /无法发送到[：:\s]*([^\s<]+@[^\s>]+)/,
-        /收件人[邮件地址]*[（(]([^\s)]+@[^\s)]+)/,
-        /<([^>]+@[^>]+)>[^<]*不存在/,
-        /投递失败[：:]\s*([^\s]+@[^\s]+)/,
-        /mailbox\s+not\s+found.*?([^\s]+@[^\s]+)/i,
-        /user\s+not\s+found.*?([^\s]+@[^\s]+)/i,
-        /address\s+rejected.*?([^\s]+@[^\s]+)/i,
-    ];
-    for (const re of patterns) {
-        const m = text.match(re);
-        if (m) return { email: m[1].replace(/[<>]/g, ''), reason: '邮箱不存在或无法接收' };
-    }
-    // 也尝试匹配 Subject 行中的邮箱
-    const subjMatch = text.match(/Subject:.*?([^\s<>]+@[^\s<>]+)/);
-    if (subjMatch) return { email: subjMatch[1], reason: '投递失败' };
-    return null;
+    } catch (_) { /* 表不存在则跳过 */ }
 }
 
 // ===== 辅助：清理超过5分钟未验证的账号 =====
@@ -141,16 +51,8 @@ async function users(req, res) {
                 catch (_) { /* skip */ }
             }
             return jsonRes(res, 200, { message: `已删除 ${deleted} 个用户` });
-        }        if (action === 'check-bounces') {
-            const result = await checkBounces();
-            return jsonRes(res, 200, { 
-                bounces: result.bounces, 
-                errors: result.errors,
-                message: result.bounces.length > 0 
-                    ? `检测到 ${result.bounces.length} 封退信` 
-                    : (result.errors.length > 0 ? result.errors[0] : '没有检测到退信')
-            });
-        }        return jsonRes(res, 400, { message: '无效操作' });
+        }
+        return jsonRes(res, 400, { message: '无效操作' });
     }
 
     try {
@@ -209,6 +111,20 @@ async function users(req, res) {
         // 按注册时间排序，保证编号稳定
         filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
+        // CSV 导出
+        if ((req.query || {}).format === 'csv') {
+            const header = '编号,邮箱,QQ,游戏ID,状态,角色,注册时间\n';
+            const rows = filtered.map((u, i) => {
+                const status = u.email_confirmed ? '已验证' : '未验证';
+                const role = u.role === 'admin' ? '管理员' : '玩家';
+                return `${i+1},"${u.email}","${u.qq||''}","${u.game_id||''}",${status},${role},"${new Date(u.created_at).toLocaleDateString('zh-CN')}"`;
+            }).join('\n');
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename=users.csv');
+            // 添加 BOM 让 Excel 识别中文
+            return res.status(200).send('\uFEFF' + header + rows);
+        }
+
         jsonRes(res, 200, {
             total: filtered.length,
             operator_role: operator.role,
@@ -241,6 +157,7 @@ async function deleteUser(req, res) {
         const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
         if (deleteError) return jsonRes(res, 500, { message: deleteError.message });
 
+        await logAudit(operator, '删除用户', user.email);
         jsonRes(res, 200, {
             message: `已删除用户 ${user.email}（原角色: ${targetRole}）`
         });
@@ -271,6 +188,7 @@ async function resetUserPassword(req, res) {
 
         if (updateError) return jsonRes(res, 500, { message: updateError.message });
 
+        await logAudit(operator, '重置密码', user.email);
         jsonRes(res, 200, {
             message: `已重置用户 ${user.email} 的密码`
         });
@@ -310,6 +228,7 @@ async function setRole(req, res) {
         if (updateError) return jsonRes(res, 500, { message: updateError.message });
         if (upsertError) console.error('Upsert profile role error:', upsertError);
 
+        await logAudit(operator, `设置角色为${role}`, user.email);
         jsonRes(res, 200, { message: `已将用户 ${user.email} 的角色更新为 ${role}` });
     } catch (err) {
         console.error('Set role error:', err);
@@ -317,4 +236,41 @@ async function setRole(req, res) {
     }
 }
 
-module.exports = { users, deleteUser, resetUserPassword, setRole };
+// ===== 仪表盘 =====
+async function dashboard(req, res) {
+    const operator = await requireRole(req, res, 'admin');
+    if (!operator) return;
+
+    try {
+        // 总用户数
+        let totalUsers = 0, verified = 0, unverified = 0, todayReg = 0;
+        const today = new Date().toISOString().slice(0, 10);
+        for (let page = 1; page <= 4; page++) {
+            const { data } = await supabase.auth.admin.listUsers({ page, perPage: 500 });
+            const users = data?.users || [];
+            if (!users.length) break;
+            totalUsers += users.length;
+            for (const u of users) {
+                if (u.email_confirmed_at) verified++;
+                else unverified++;
+                if (u.created_at?.startsWith(today)) todayReg++;
+            }
+        }
+
+        // 问题统计
+        const { count: totalQuestions } = await supabase.from('questions').select('*', { count: 'exact', head: true });
+        const { count: openQuestions } = await supabase.from('questions').select('*', { count: 'exact', head: true }).eq('status', 'open');
+
+        jsonRes(res, 200, {
+            stats: {
+                totalUsers, verified, unverified, todayReg,
+                totalQuestions: totalQuestions || 0,
+                openQuestions: openQuestions || 0
+            }
+        });
+    } catch (e) {
+        jsonRes(res, 500, { message: '服务器错误' });
+    }
+}
+
+module.exports = { users, dashboard, deleteUser, resetUserPassword, setRole };

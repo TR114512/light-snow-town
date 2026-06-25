@@ -16,6 +16,7 @@ const routes = {
 
     // Admin
     'admin/users':                 admin.users,
+    'admin/dashboard':             admin.dashboard,
     'admin/delete-user':           admin.deleteUser,
     'admin/reset-user-password':   admin.resetUserPassword,
     'admin/set-role':              admin.setRole,

@@ -25,6 +25,9 @@
         .search-box{flex:1;min-width:200px;padding:10px 16px;border-radius:30px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;outline:none;font-family:inherit}
         .search-box:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,0.2)}
         .stats{font-size:0.85rem;color:var(--dim)}
+        .stat-card{flex:1;min-width:120px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-align:center}
+        .stat-num{font-size:1.5rem;font-weight:700;color:var(--blue)}
+        .stat-label{font-size:0.75rem;color:var(--dim);margin-top:2px}
 
         .table-wrap{background:var(--card);border-radius:16px;border:1px solid var(--border);overflow:hidden}
         .table-wrap table{width:100%;border-collapse:collapse}
@@ -64,11 +67,22 @@
         </div>
     </header>
 
+    <!-- 仪表盘 -->
+    <div class="dashboard" id="dashboard" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <div class="stat-card"><div class="stat-num" id="statTotal">-</div><div class="stat-label">总用户</div></div>
+        <div class="stat-card"><div class="stat-num" id="statVerified">-</div><div class="stat-label">已验证</div></div>
+        <div class="stat-card"><div class="stat-num" id="statUnverified">-</div><div class="stat-label">未验证</div></div>
+        <div class="stat-card"><div class="stat-num" id="statToday">-</div><div class="stat-label">今日注册</div></div>
+        <div class="stat-card"><div class="stat-num" id="statQuestions">-</div><div class="stat-label">总问题</div></div>
+        <div class="stat-card"><div class="stat-num" id="statOpen">-</div><div class="stat-label">待回复</div></div>
+    </div>
+
     <div class="toolbar">
         <input class="search-box" id="searchInput" placeholder="🔍 搜索用户邮箱...">
         <button class="btn sm" id="toggleUnverified">📋 仅已验证</button>
         <button class="btn sm danger" id="cleanupBtn">🧹 清理未验证</button>
-        <button class="btn sm" id="bounceBtn">📧 检测退信</button>
+        <a class="btn sm" id="exportCsv" href="#" style="text-decoration:none">📥 导出CSV</a>
+        <button class="btn sm danger" id="batchDeleteBtn" style="display:none">🗑 批量删除</button>
         <button class="btn sm danger" id="batchDeleteBtn" style="display:none">🗑 批量删除</button>
         <span class="stats" id="statsText">共 0 个用户</span>
     </div>
@@ -337,46 +351,6 @@
         }catch(e){ toast(e.message,'err'); }
     });
 
-    // 检测退信
-    document.getElementById('bounceBtn').addEventListener('click',async function(){
-        const btn = this;
-        btn.disabled = true;
-        btn.textContent = '📧 检测中...';
-        const token = localStorage.getItem('lt_token');
-        try{
-            const data = await safeFetch(API_BASE+'/admin/users',{
-                method:'POST',
-                headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-                body:JSON.stringify({action:'check-bounces'})
-            });
-            // 显示错误详情
-            if(data.errors && data.errors.length > 0){
-                toast('❌ ' + data.errors[0], 'err');
-                console.log('退信检测错误:', data.errors);
-            }
-            if(!data.bounces || data.bounces.length === 0){
-                if(!data.errors || data.errors.length === 0) toast('没有检测到退信 ✅','ok');
-            } else {
-                const lines = data.bounces.map(b => `• ${b.email} — ${b.reason}`).join('\n');
-                if(confirm(`检测到 ${data.bounces.length} 封退信：\n\n${lines}\n\n是否删除这些用户？`)){
-                    const allUsers = await safeFetch(API_BASE+'/admin/users',{headers:{'Authorization':'Bearer '+token}});
-                    const bouncedEmails = new Set(data.bounces.map(b => b.email.toLowerCase()));
-                    const toDelete = allUsers.users.filter(u => bouncedEmails.has(u.email.toLowerCase())).map(u => u.id);
-                    if(toDelete.length){
-                        await safeFetch(API_BASE+'/admin/users',{
-                            method:'POST',
-                            headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-                            body:JSON.stringify({action:'batch-delete',userIds:toDelete})
-                        });
-                        toast(`已删除 ${toDelete.length} 个退信用户`,'ok');
-                        loadUsers();
-                    }
-                }
-            }
-        }catch(e){ toast(e.message,'err'); }
-        btn.disabled = false;
-        btn.textContent = '📧 检测退信';
-    });
     document.getElementById('logoutBtn').addEventListener('click',function(){
         localStorage.removeItem('lt_token');
         localStorage.removeItem('lt_user');
@@ -444,12 +418,28 @@
 
     // ---- 启动 ----
     checkAuth().then(() => {
-        // 恢复上次设置的间隔
+        loadDashboard();
+        document.getElementById('exportCsv').href = API_BASE + '/admin/users?format=csv';
         const saved = parseInt(localStorage.getItem('lt_cleanup_interval'));
         const interval = saved || 5;
         document.getElementById('cleanupInterval').value = interval;
         if(interval > 0) startCleanupTimer(interval);
     });
+
+    async function loadDashboard(){
+        const token = localStorage.getItem('lt_token');
+        if(!token) return;
+        try{
+            const data = await safeFetch(API_BASE+'/admin/dashboard',{headers:{'Authorization':'Bearer '+token}});
+            const s = data.stats;
+            document.getElementById('statTotal').textContent = s.totalUsers;
+            document.getElementById('statVerified').textContent = s.verified;
+            document.getElementById('statUnverified').textContent = s.unverified;
+            document.getElementById('statToday').textContent = s.todayReg;
+            document.getElementById('statQuestions').textContent = s.totalQuestions;
+            document.getElementById('statOpen').textContent = s.openQuestions;
+        }catch(_){}
+    }
 })();
 </script>
 </body>

@@ -60,15 +60,25 @@ async function questions(req, res) {
             } catch (e) { return jsonRes(res, 500, { message: '服务器错误' }); }
         }
 
-        // 列表（支持 ?my=1 只看自己的）
+        // 列表（支持 ?search / ?page / ?limit / ?my=1）
         try {
+            const { search, my, author, page: rawPage, limit: rawLimit } = req.query || {};
+            const page = parseInt(rawPage) || 1;
+            const limit = Math.min(parseInt(rawLimit) || 20, 50);
+            const offset = (page - 1) * limit;
+
             let query = supabase
                 .from('questions')
-                .select('*')
+                .select('*', { count: 'exact' })
                 .order('created_at', { ascending: false });
 
+            // 搜索
+            if (search) {
+                query = query.ilike('title', `%${search}%`);
+            }
+
             // 过滤"我的问题"
-            if ((req.query || {}).my === '1') {
+            if (my === '1') {
                 const authHeader = req.headers.authorization;
                 if (!authHeader) return jsonRes(res, 401, { message: '请先登录' });
                 const token = authHeader.split(' ')[1];
@@ -78,11 +88,16 @@ async function questions(req, res) {
                 query = query.eq('author_id', decoded.id);
             }
 
-            const { data: questions, error } = await query;
+            // 查看特定作者的提问
+            if (author) {
+                query = query.eq('author_id', author);
+            }
+
+            const { data: questions, count: total, error } = await query.range(offset, offset + limit - 1);
 
             if (error) return jsonRes(res, 500, { message: error.message });
 
-            const enriched = await enrichAuthorNames(questions);
+            const enriched = await enrichAuthorNames(questions || []);
 
             for (const q of enriched) {
                 const { count: ac } = await supabase.from('answers').select('*', { count: 'exact', head: true }).eq('question_id', q.id);
@@ -91,7 +106,13 @@ async function questions(req, res) {
                 q.comment_count = cc || 0;
             }
 
-            return jsonRes(res, 200, { questions: enriched });
+            return jsonRes(res, 200, {
+                questions: enriched,
+                total: total || 0,
+                page,
+                limit,
+                totalPages: Math.ceil((total || 0) / limit)
+            });
         } catch (e) {
             return jsonRes(res, 500, { message: '服务器错误' });
         }

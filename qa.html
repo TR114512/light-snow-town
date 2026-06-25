@@ -81,7 +81,13 @@
         </div>
     </header>
 
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input class="form-control" id="searchInput" placeholder="🔍 搜索问题..." style="flex:1">
+        <button class="btn" id="searchBtn">搜索</button>
+    </div>
+
     <div id="questionList"></div>
+    <div id="pagination" style="display:flex;justify-content:center;gap:8px;margin-top:16px"></div>
 </div>
 
 <!-- 提问弹窗（保留） -->
@@ -111,6 +117,10 @@
     let userRole = 'user'; // 'admin' 管理员, 'user' 玩家
     let expandedId = null; // 当前展开的问题 ID
     let myMode = false;   // 是否只看"我的问题"
+    let currentPage = 1;
+    let totalPages = 1;
+    let authorFilter = null; // 当前筛选的作者 ID
+    const pageSize = 20;
 
     function t(msg,type){
         const el=document.getElementById('toast');
@@ -160,18 +170,40 @@
     document.getElementById('myQuestionsBtn').addEventListener('click',()=>{
         myMode = !myMode;
         expandedId = null;
-        loadQuestions();
+        loadQuestions(1);
+    });
+
+    document.getElementById('searchBtn').addEventListener('click',()=>{
+        loadQuestions(1);
+    });
+    document.getElementById('searchInput').addEventListener('keydown',(e)=>{
+        if(e.key === 'Enter') loadQuestions(1);
     });
 
     function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+    function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+    function filterByAuthor(authorId){
+        authorFilter = authorId;
+        myMode = false;
+        expandedId = null;
+        loadQuestions(1);
+    }
+
+    function clearAuthorFilter(){
+        authorFilter = null;
+        loadQuestions(1);
+    }
 
     // ===== 渲染问题列表（含空详情占位） =====
-    async function loadQuestions(){
+    async function loadQuestions(page){
+        page = page || 1;
+        currentPage = page;
         const list=document.getElementById('questionList');
         const btn = document.getElementById('myQuestionsBtn');
+        const search = document.getElementById('searchInput').value.trim();
         list.innerHTML='<div class="empty">加载中...</div>';
 
-        // 更新按钮样式
         if(myMode){
             btn.textContent = '📋 查看全部';
             btn.classList.add('primary');
@@ -181,17 +213,27 @@
         }
 
         try{
-            const url = myMode ? API+'/qa/questions?my=1' : API+'/qa/questions';
+            const params = new URLSearchParams({ page, limit: pageSize });
+            if(search) params.set('search', search);
+            if(myMode) params.set('my', '1');
+            if(authorFilter) params.set('author', authorFilter);
+            const url = API+'/qa/questions?' + params.toString();
             const opts = myMode ? {headers:{'Authorization':'Bearer '+token}} : {};
             const data = await sf(url, opts);
-            if(!data.questions.length){
-                list.innerHTML = myMode
-                    ? '<div class="empty">你还没有提过问题 ✨</div>'
-                    : '<div class="empty">还没有问题，来提第一个吧 ✨</div>';
+            totalPages = data.totalPages || 1;
+
+            if(!data.questions || data.questions.length === 0){
+                list.innerHTML = search
+                    ? '<div class="empty">没有找到匹配的问题</div>'
+                    : myMode
+                        ? '<div class="empty">你还没有提过问题 ✨</div>'
+                        : '<div class="empty">还没有问题，来提第一个吧 ✨</div>';
+                document.getElementById('pagination').innerHTML = '';
                 return;
             }
             const isAdmin = userRole==='admin';
-            list.innerHTML=data.questions.map(q=>`
+            const authLabel = authorFilter ? `<div style="margin-bottom:12px;color:var(--dim)">📌 正在查看 <b>${esc(data.questions[0]?.author_name||'未知')}</b> 的提问 <a href="javascript:void(0)" onclick="clearAuthorFilter()" style="color:var(--blue)">[显示全部]</a></div>` : '';
+            list.innerHTML = authLabel + data.questions.map(q=>`
                 <div class="q-item" id="q-${q.id}">
                     <div class="q-header" onclick="toggleDetail(${q.id})">
                         <span class="arrow">▶</span>
@@ -199,7 +241,7 @@
                         <div class="info">
                             <div class="q-title"><span class="q-num">#${q.question_number}</span> ${esc(q.title)}</div>
                             <div class="q-meta">
-                                <span>${esc(q.author_name||q.author_email?.split('@')[0]||'匿名')}</span>
+                                <span style="cursor:pointer;color:var(--blue)" onclick="event.stopPropagation();filterByAuthor('${escHtml(q.author_id||'')}')">${esc(q.author_name||q.author_email?.split('@')[0]||'匿名')}</span>
                                 <span>${new Date(q.created_at).toLocaleDateString('zh-CN')}</span>
                                 <span>💬 ${q.answer_count} 回答 · ${q.comment_count} 评论</span>
                             </div>
@@ -211,7 +253,22 @@
                 </div>
             `).join('');
         }catch(e){list.innerHTML='<div class="empty" style="color:var(--danger)">'+e.message+'</div>'}
+
+        // 分页
+        renderPagination();
     }
+
+    function renderPagination(){
+        const pg = document.getElementById('pagination');
+        if(totalPages <= 1){ pg.innerHTML = ''; return; }
+        let html = '';
+        if(currentPage > 1) html += `<button class="btn sm" onclick="loadQuestions(${currentPage-1})">◀ 上一页</button>`;
+        html += `<span style="padding:4px 12px;color:var(--dim)">${currentPage} / ${totalPages}</span>`;
+        if(currentPage < totalPages) html += `<button class="btn sm" onclick="loadQuestions(${currentPage+1})">下一页 ▶</button>`;
+        pg.innerHTML = html;
+    }
+
+    window.loadQuestions = loadQuestions;
 
     // ===== 展开/收起问题详情 =====
     async function toggleDetail(qid){

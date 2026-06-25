@@ -8,10 +8,18 @@ async function login(req, res) {
     const { email, password } = req.body;
     if (!email || !password) return jsonRes(res, 400, { message: '请填写完整信息' });
 
+    const ip = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
+
     try {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) return jsonRes(res, 400, { message: error.message });
+        if (error) {
+            // 记录失败登录
+            logLogin(email, ip, false, error.message);
+            return jsonRes(res, 400, { message: error.message });
+        }
 
+        // 记录成功登录
+        logLogin(email, ip, true);
         const token = signToken(data.user.id, data.user.email);
         jsonRes(res, 200, {
             message: '登录成功',
@@ -22,6 +30,15 @@ async function login(req, res) {
         console.error(err);
         jsonRes(res, 500, { message: '服务器错误' });
     }
+}
+
+async function logLogin(email, ip, success, reason) {
+    try {
+        await supabase.from('login_logs').insert({
+            email, ip, success, reason: reason || null,
+            created_at: new Date().toISOString()
+        });
+    } catch (_) { /* 表不存在则跳过 */ }
 }
 
 // ===== 注册反机器人保护 =====
