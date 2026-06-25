@@ -86,7 +86,7 @@ async function getUserRole(userId, email) {
         // 1. 先查 user_metadata（set-role 写在这里，RLS 拦不住）
         const { data: { user }, error: ue } = await supabase.auth.admin.getUserById(userId);
         if (!ue && user && user.user_metadata && user.user_metadata.role) {
-            return user.user_metadata.role;
+            return normalizeRole(user.user_metadata.role);
         }
     } catch (_) { /* 继续 */ }
 
@@ -97,12 +97,18 @@ async function getUserRole(userId, email) {
             .select('role')
             .eq('id', userId)
             .single();
-        if (!error && data && data.role) return data.role;
+        if (!error && data && data.role) return normalizeRole(data.role);
     } catch (_) { /* 继续 */ }
 
     // 3. 环境变量兜底
     const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
     if (adminEmails.includes((email || '').toLowerCase())) return 'admin';
+    return 'user';
+}
+
+// 统一规范化角色：兼容旧 super_admin → admin
+function normalizeRole(role) {
+    if (role === 'super_admin' || role === 'admin') return 'admin';
     return 'user';
 }
 

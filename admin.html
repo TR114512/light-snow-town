@@ -133,7 +133,7 @@
                 headers: {'Authorization':'Bearer '+token}
             });
             if(!data.user) throw new Error('auth failed');
-            if(data.user.role !== 'admin'){
+            if(data.user.role !== 'admin' && data.user.role !== 'super_admin'){
                 toast('需要管理员权限','err');
                 setTimeout(() => location.href = HOME, 1500);
                 return;
