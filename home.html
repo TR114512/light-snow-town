@@ -786,8 +786,8 @@
                 document.getElementById('profileNewPwdConfirmModal').value = '';
                 document.getElementById('profileQQModal').value = user.qq || '';
                 document.getElementById('profileGameIdModal').value = user.game_id || '';
-                // 管理面板入口：数据库角色 或 环境变量兜底
-                const staffRoles = ['super_admin', 'admin'];
+                // 管理面板入口
+                const staffRoles = ['admin'];
                 const adminEmails = (localStorage.getItem('lt_admin_emails') || '').split(',').map(e => e.trim().toLowerCase());
                 const isStaff = staffRoles.includes(user.role) || adminEmails.includes(user.email.toLowerCase());
                 document.getElementById('switchToAdminPanel').style.display = isStaff ? 'inline' : 'none';
@@ -914,8 +914,8 @@
                     if (data.user) {
                         localStorage.setItem('lt_user', JSON.stringify(data.user));
                         updateAuthButton(true);
-                        // 管理员及以上 或 兜底邮箱
-                        const staffRoles = ['super_admin', 'admin'];
+                        // 管理员/兜底邮箱
+                        const staffRoles = ['admin'];
                         const adminEmails = (localStorage.getItem('lt_admin_emails') || '').split(',').map(e => e.trim().toLowerCase());
                         if (staffRoles.includes(data.user.role) || adminEmails.includes(data.user.email.toLowerCase())) {
                             document.getElementById('switchToAdminPanel').style.display = 'inline';

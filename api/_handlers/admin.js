@@ -67,10 +67,6 @@ async function deleteUser(req, res) {
 
         const targetRole = await getUserRole(userId, user.email);
 
-        if ((targetRole === 'admin' || targetRole === 'super_admin') && operator.role !== 'super_admin') {
-            return jsonRes(res, 403, { message: '只有超级管理员才能删除管理员账号' });
-        }
-
         const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
         if (deleteError) return jsonRes(res, 500, { message: deleteError.message });
 
@@ -120,7 +116,7 @@ async function setRole(req, res) {
 
     if (req.method !== 'POST') return jsonRes(res, 405, { message: 'Method not allowed' });
 
-    const VALID_ROLES = ['super_admin', 'admin', 'user'];
+    const VALID_ROLES = ['admin', 'user'];
     const { userId, role } = req.body;
     if (!userId || !role) return jsonRes(res, 400, { message: '请提供 userId 和 role' });
     if (!VALID_ROLES.includes(role)) return jsonRes(res, 400, { message: '角色只能是: ' + VALID_ROLES.join(', ') });
@@ -131,11 +127,6 @@ async function setRole(req, res) {
         if (userError || !user) return jsonRes(res, 404, { message: '用户不存在: ' + (userError?.message || '') });
 
         const targetRole = await getUserRole(userId, user.email);
-
-        if ((targetRole === 'admin' || targetRole === 'super_admin') && operator.role !== 'super_admin') {
-            return jsonRes(res, 403, { message: '只有超级管理员才能管理管理员账号' });
-        }
-        if (role === 'super_admin') return jsonRes(res, 403, { message: '超级管理员只能通过数据库设置' });
 
         const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
             user_metadata: { role: role }

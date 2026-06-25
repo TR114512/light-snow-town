@@ -59,27 +59,25 @@ function handleOptions(req, res) {
 // 无需配置 EMAIL_USER / EMAIL_PASS 环境变量
 
 // ===== 角色权限系统 =====
-
+// 只有两种角色：admin（管理员）和 user（玩家）
 // 角色层级（数字越大权限越高）
 const ROLE_LEVEL = {
     'user':       0,
-    'admin':      2,
-    'super_admin': 3
+    'admin':      1
 };
 
 // 角色可管理的下级角色
 const ROLE_CAN_MANAGE = {
-    'super_admin': ['admin', 'user'],
-    'admin':       ['user'],
-    'user':        []
+    'admin': ['admin', 'user'],
+    'user':  []
 };
 
 // 权限对应的最低角色要求
 const PERMISSION_ROLE = {
-    'users.list':    'admin',
+    'users.list':     'admin',
     'users.set_role': 'admin',
-    'users.delete':  'admin',
-    'admins.manage': 'super_admin'
+    'users.delete':   'admin',
+    'admins.manage':  'admin'
 };
 
 // 查角色：user_metadata 优先（绕过 RLS），profiles 表兜底
@@ -104,7 +102,7 @@ async function getUserRole(userId, email) {
 
     // 3. 环境变量兜底
     const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
-    if (adminEmails.includes((email || '').toLowerCase())) return 'super_admin';
+    if (adminEmails.includes((email || '').toLowerCase())) return 'admin';
     return 'user';
 }
 

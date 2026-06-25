@@ -76,7 +76,7 @@
             <span id="userInfo" style="color:var(--dim);font-size:0.8rem"></span>
             <button class="btn" id="loginBtn">登录</button>
             <button class="btn primary" id="askBtn" style="display:none">+ 提问题</button>
-            <button class="btn" onclick="location.href='/'">← 主页</button>
+            <button class="btn" onclick="location.href='https://tr114512.github.io/light-snow-town/home.html'">← 主页</button>
         </div>
     </header>
 
@@ -107,7 +107,7 @@
 
     let token = localStorage.getItem('lt_token');
     let user = JSON.parse(localStorage.getItem('lt_user')||'null');
-    let userRole = 'user';
+    let userRole = 'user'; // 'admin' 管理员, 'user' 玩家
     let expandedId = null; // 当前展开的问题 ID
 
     function t(msg,type){
@@ -150,7 +150,7 @@
 
     document.getElementById('loginBtn').addEventListener('click',()=>{
         if(token){logout();return;}
-        location.href='/?login=1';
+        location.href='https://tr114512.github.io/light-snow-town/home.html?login=1';
     });
 
     function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
@@ -162,7 +162,7 @@
         try{
             const data=await sf(API+'/qa/questions');
             if(!data.questions.length){list.innerHTML='<div class="empty">还没有问题，来提第一个吧 ✨</div>';return}
-            const isAdmin = userRole==='admin'||userRole==='super_admin';
+            const isAdmin = userRole==='admin';
             list.innerHTML=data.questions.map(q=>`
                 <div class="q-item" id="q-${q.id}">
                     <div class="q-header" onclick="toggleDetail(${q.id})">
@@ -171,7 +171,7 @@
                         <div class="info">
                             <div class="q-title"><span class="q-num">#${q.question_number}</span> ${esc(q.title)}</div>
                             <div class="q-meta">
-                                <span>${q.author_email?q.author_email.split('@')[0]:'匿名'}</span>
+                                <span>${esc(q.author_name||q.author_email?.split('@')[0]||'匿名')}</span>
                                 <span>${new Date(q.created_at).toLocaleDateString('zh-CN')}</span>
                                 <span>💬 ${q.answer_count} 回答 · ${q.comment_count} 评论</span>
                             </div>
@@ -230,7 +230,7 @@
         const q = data.question;
         const answers = data.answers||[];
         const comments = data.comments||[];
-        const isAdmin = userRole==='admin'||userRole==='super_admin';
+        const isAdmin = userRole==='admin';
         const uid = 'q'+qid; // 唯一前缀避免 ID 冲突
 
         detail.innerHTML = `
@@ -246,7 +246,7 @@
             <div class="section-title">📝 回答 (${answers.length})</div>
             ${answers.map((a,i)=>`
                 <div class="reply-box ${a.is_admin_answer?'admin':''}">
-                    <div class="reply-author">${a.is_admin_answer?'🛡 管理员':'👤'} ${a.author_email?esc(a.author_email.split('@')[0]):'匿名'} · ${new Date(a.created_at).toLocaleString('zh-CN')}</div>
+                    <div class="reply-author">${a.is_admin_answer?'🛡 管理员':'👤 玩家'} ${esc(a.author_name||a.author_email?.split('@')[0]||'匿名')} · ${new Date(a.created_at).toLocaleString('zh-CN')}</div>
                     <div class="reply-content">${esc(a.content)}</div>
                 </div>
             `).join('')||'<div style="color:var(--dim);font-size:0.85rem;padding:4px 0">暂无回答</div>'}
@@ -261,7 +261,7 @@
             <div class="section-title">💬 评论 (${comments.length})</div>
             ${comments.map(c=>`
                 <div class="reply-box">
-                    <div class="reply-author">👤 ${c.author_email?esc(c.author_email.split('@')[0]):'匿名'} · ${new Date(c.created_at).toLocaleString('zh-CN')}</div>
+                    <div class="reply-author">👤 玩家 ${esc(c.author_name||c.author_email?.split('@')[0]||'匿名')} · ${new Date(c.created_at).toLocaleString('zh-CN')}</div>
                     <div class="reply-content">${esc(c.content)}</div>
                 </div>
             `).join('')||'<div style="color:var(--dim);font-size:0.85rem;padding:4px 0">暂无评论</div>'}

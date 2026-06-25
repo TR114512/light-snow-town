@@ -59,7 +59,7 @@
         <h1>🛡 灯雪镇 · 管理面板</h1>
         <div class="nav">
             <span id="operatorInfo" style="font-size:0.8rem;color:var(--dim);"></span>
-            <button class="btn" onclick="location.href='/'">← 返回主页</button>
+            <button class="btn" onclick="location.href='https://tr114512.github.io/light-snow-town/home.html'">← 返回主页</button>
             <button class="btn danger" id="logoutBtn">退出</button>
         </div>
     </header>
@@ -95,8 +95,9 @@
 (function(){
     'use strict';
     const API_BASE = 'https://light-snow-town.vercel.app/api';
-    const ROLE_LABELS = {'super_admin':'超级管理员','admin':'管理员','user':'用户'};
-    const CAN_MANAGE = {'super_admin':['admin','user'],'admin':['user'],'user':[]};
+    const HOME = 'https://tr114512.github.io/light-snow-town/home.html';
+    const ROLE_LABELS = {'admin':'管理员','user':'玩家'};
+    const CAN_MANAGE = {'admin':['admin','user'],'user':[]};
 
     let operatorRole = 'user';
     let operatorEmail = '';
@@ -126,15 +127,15 @@
     // ---- 鉴权 ----
     async function checkAuth(){
         const token = localStorage.getItem('lt_token');
-        if(!token){ location.href = '/'; return; }
+        if(!token){ location.href = HOME; return; }
         try{
             const data = await safeFetch(API_BASE + '/me', {
                 headers: {'Authorization':'Bearer '+token}
             });
             if(!data.user) throw new Error('auth failed');
-            if(data.user.role !== 'super_admin' && data.user.role !== 'admin'){
+            if(data.user.role !== 'admin'){
                 toast('需要管理员权限','err');
-                setTimeout(() => location.href = '/', 1500);
+                setTimeout(() => location.href = HOME, 1500);
                 return;
             }
             operatorRole = data.user.role;
@@ -143,7 +144,7 @@
             loadUsers();
         }catch(e){
             localStorage.removeItem('lt_token');
-            location.href = '/';
+            location.href = HOME;
         }
     }
 
@@ -170,7 +171,7 @@
             tbody.innerHTML = data.users.map(u => {
                 const isSelf = u.id === myId;
                 const canEdit = canManage.includes(u.role) && !isSelf;
-                const canDelete = u.role !== 'super_admin' && !isSelf;
+                const canDelete = !isSelf;
                 const canPwd = !isSelf;
 
                 let roleCell;
@@ -178,7 +179,7 @@
                     const opts = canManage.map(r => `<option value="${r}" ${u.role===r?'selected':''}>${ROLE_LABELS[r]}</option>`).join('');
                     roleCell = `<select class="role-select" onchange="setRole('${u.id}','${u.email}',this.value)">${opts}</select>`;
                 } else {
-                    const cls = u.role === 'super_admin' ? 'super' : u.role === 'admin' ? 'admin' : 'user';
+                    const cls = u.role === 'admin' ? 'admin' : 'user';
                     roleCell = `<span class="badge ${cls}">${ROLE_LABELS[u.role]||u.role}</span>`;
                 }
 
@@ -253,7 +254,7 @@
     document.getElementById('logoutBtn').addEventListener('click',function(){
         localStorage.removeItem('lt_token');
         localStorage.removeItem('lt_user');
-        location.href = '/';
+        location.href = HOME;
     });
 
     // ---- 主题同步 ----

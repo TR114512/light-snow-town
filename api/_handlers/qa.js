@@ -1,9 +1,44 @@
 const { supabase, jsonRes, requireRole } = require('../_utils');
 const jwt = require('jsonwebtoken');
 
+// ===== 辅助：批量查找用户 game_id =====
+async function enrichAuthorNames(items) {
+    if (!items || !items.length) return items;
+    const authorIds = [...new Set(items.map(i => i.author_id).filter(Boolean))];
+    if (!authorIds.length) return items;
+
+    // 批量查 profiles
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, game_id, display_name')
+        .in('id', authorIds);
+
+    const nameMap = {};
+    if (profiles) {
+        profiles.forEach(p => {
+            nameMap[p.id] = p.game_id || p.display_name || '';
+        });
+    }
+
+    // 兜底：查 user_metadata
+    for (const id of authorIds) {
+        if (nameMap[id]) continue;
+        try {
+            const { data: { user } } = await supabase.auth.admin.getUserById(id);
+            if (user?.user_metadata) {
+                nameMap[id] = user.user_metadata.game_id || user.user_metadata.display_name || '';
+            }
+        } catch (_) { /* skip */ }
+    }
+
+    return items.map(item => ({
+        ...item,
+        author_name: nameMap[item.author_id] || (item.author_email || '').split('@')[0]
+    }));
+}
+
 // ===== 问题列表/详情/创建 =====
 async function questions(req, res) {
-    // GET = 列表或详情(?id=X)
     if (req.method === 'GET') {
         const qid = (req.query || {}).id;
         if (qid) {
@@ -12,10 +47,20 @@ async function questions(req, res) {
                 if (error || !q) return jsonRes(res, 404, { message: '问题不存在' });
                 const { data: answers } = await supabase.from('answers').select('*').eq('question_id', qid).order('created_at', { ascending: true });
                 const { data: comments } = await supabase.from('comments').select('*').eq('question_id', qid).order('created_at', { ascending: true });
-                return jsonRes(res, 200, { question: q, answers: answers || [], comments: comments || [] });
+
+                // 收集所有作者 ID 并批量获取 game_id
+                const allItems = [q, ...(answers || []), ...(comments || [])];
+                const enriched = await enrichAuthorNames(allItems);
+
+                return jsonRes(res, 200, {
+                    question: enriched[0],
+                    answers: enriched.slice(1, 1 + (answers || []).length),
+                    comments: enriched.slice(1 + (answers || []).length)
+                });
             } catch (e) { return jsonRes(res, 500, { message: '服务器错误' }); }
         }
 
+        // 列表
         try {
             const { data: questions, error } = await supabase
                 .from('questions')
@@ -24,14 +69,16 @@ async function questions(req, res) {
 
             if (error) return jsonRes(res, 500, { message: error.message });
 
-            for (const q of questions) {
+            const enriched = await enrichAuthorNames(questions);
+
+            for (const q of enriched) {
                 const { count: ac } = await supabase.from('answers').select('*', { count: 'exact', head: true }).eq('question_id', q.id);
                 const { count: cc } = await supabase.from('comments').select('*', { count: 'exact', head: true }).eq('question_id', q.id);
                 q.answer_count = ac || 0;
                 q.comment_count = cc || 0;
             }
 
-            return jsonRes(res, 200, { questions });
+            return jsonRes(res, 200, { questions: enriched });
         } catch (e) {
             return jsonRes(res, 500, { message: '服务器错误' });
         }
