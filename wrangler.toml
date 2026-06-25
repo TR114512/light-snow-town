@@ -1,13 +1,6 @@
 # Cloudflare Workers 配置
-name = "lighttown-api"
+name = "light-snow-town"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
-
-# 排除不需要上传的文件
-[build]
-command = ""
-
-[build.upload]
-exclude = ["api", "*.html", "server-icon.jpg", ".gitignore", "vercel.json"]
 
