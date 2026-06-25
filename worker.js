@@ -13,9 +13,10 @@ async function signJWT(p,sec){let e=new TextEncoder(),k=await crypto.subtle.impo
 async function verifyJWT(tok,sec){let p=tok.split('.');if(p.length!==3)throw Error('bad');let e=new TextEncoder(),k=await crypto.subtle.importKey('raw',e.encode(sec),{name:'HMAC',hash:'SHA-256'},false,['verify']),ok=await crypto.subtle.verify('HMAC',k,b64d(p[2]),e.encode(p[0]+'.'+p[1]));if(!ok)throw Error('bad');return JSON.parse(new TextDecoder().decode(b64d(p[1])))}
 
 // Supabase
-function sa(env,p,o={}){return fetch(env.SUPABASE_URL+'/rest/v1'+p,{...o,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json',...o.headers}})}
-function aa(env,p,o={}){return fetch(env.SUPABASE_URL+'/auth/v1/admin'+p,{...o,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json',...o.headers}})}
-function au(env,p,o={}){return fetch(env.SUPABASE_URL+'/auth/v1'+p,{...o,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json',...o.headers}})}
+const SB_URL = 'https://yfotnbwnhulvdjxstens.supabase.co';
+function sa(env,p,o={}){return fetch(SB_URL+'/rest/v1'+p,{...o,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json',...o.headers}})}
+function aa(env,p,o={}){return fetch(SB_URL+'/auth/v1/admin'+p,{...o,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json',...o.headers}})}
+function au(env,p,o={}){return fetch(SB_URL+'/auth/v1'+p,{...o,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json',...o.headers}})}
 async function lu(env,pg=1,pp=500){let r=await aa(env,'/users?page='+pg+'&per_page='+pp);return r.ok?await r.json():{users:[]}}
 async function gu(env,uid){let r=await aa(env,'/users/'+uid);return r.ok?await r.json():null}
 async function du(env,uid){return aa(env,'/users/'+uid,{method:'DELETE'})}
@@ -30,7 +31,7 @@ async function rrole(env,req,min){let a=req.headers.get('Authorization');if(!a)r
 // 工具
 function ip(req){return req.headers.get('CF-Connecting-IP')||'unknown'}
 function gc(){return String(Math.floor(1e5+Math.random()*9e5))}
-async function sm(env,to,sub,html){try{await fetch('https://api.mailchannels.net/tx/v1/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({personalizations:[{to:[{email:to}]}],from:{email:env.EMAIL_FROM||'noreply@lt.dev',name:'灯雪镇'},subject:sub,content:[{type:'text/html',value:html}]})})}catch(_){}}
+async function sm(env,to,sub,html){try{await fetch('https://api.mailchannels.net/tx/v1/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({personalizations:[{to:[{email:to}]}],from:{email:env.EMAIL_FROM||'noreply@light-snow-town.3614005951.workers.dev',name:'灯雪镇'},subject:sub,content:[{type:'text/html',value:html}]})})}catch(_){}}
 async function ll(env,em,ip,ok,rs){try{await sa(env,'/login_logs',{method:'POST',body:JSON.stringify({email:em,ip,success:ok,reason:rs,created_at:new Date().toISOString()})})}catch(_){}}
 async function la(env,op,act,tg){try{await sa(env,'/audit_logs',{method:'POST',body:JSON.stringify({operator_email:op.email,operator_id:op.id,action:act,target:tg,created_at:new Date().toISOString()})})}catch(_){}}
 async function cr(env,ip){try{let n=new Date(),t=new Date(n-6e5).toISOString(),d=new Date(n-864e5).toISOString(),c1=await sa(env,'/reg_attempts?select=id&ip=eq.'+encodeURIComponent(ip)+'&created_at=gte.'+t,{headers:{'Prefer':'count=exact'}});if(parseInt(c1.headers.get('content-range')?.split('/')[1]||'0')>=5)return{blocked:true,reason:'操作太频繁，请10分钟后再试'};let c2=await sa(env,'/reg_attempts?select=id&ip=eq.'+encodeURIComponent(ip)+'&created_at=gte.'+d,{headers:{'Prefer':'count=exact'}});if(parseInt(c2.headers.get('content-range')?.split('/')[1]||'0')>=15)return{blocked:true,reason:'该IP注册过于频繁，已封禁24小时'}}catch(_){}return{blocked:false}}

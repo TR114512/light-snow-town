@@ -12,6 +12,14 @@
         body { background-color: var(--bg-color); font-family: 'Segoe UI','Inter','Poppins',system-ui,sans-serif; color: var(--text-main); overflow-x:hidden; min-height:100vh; transition: background-color 0.2s, color 0.2s; }
         .entrance-animation { animation: techReveal 0.9s cubic-bezier(0.2,0.9,0.4,1.1) forwards; }
         @keyframes techReveal { 0%{ opacity:0; transform:translateY(40px); filter:blur(10px); } 100%{ opacity:1; transform:translateY(0); filter:blur(0); } }
+        body.no-anim .entrance-animation { animation:none; opacity:1; transform:none; filter:none; }
+        body.no-anim .login-overlay { transition:none; }
+        body.no-anim .login-overlay.open { transition:none; }
+        body.no-anim .login-modal { transition:none; transform:none; opacity:1; }
+        body.no-anim .dev-modal { transition:none; transform:none; opacity:1; }
+        body.no-anim .settings-drawer { transition:none; }
+        body.no-anim .linear-progress-fill { animation:none; width:100%; }
+        body.no-loading .loading-screen { display:none !important; }
         #dynamicBgCanvas { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; display:block; }
         .main-content { position:relative; z-index:10; max-width:1300px; margin:0 auto; padding:1.2rem 2rem 3rem 2rem; }
         .top-bar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:2rem; padding-bottom:0.8rem; border-bottom:1px solid var(--border-light); }
@@ -27,10 +35,10 @@
         .user-badge .avatar-small { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--accent-blue),var(--accent-gold)); display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:700; color:#fff; }
 
         /* ===== 登录模态框 ===== */
-        .login-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:9999; display:none; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease; }
-        .login-overlay.open { display:flex; opacity:1; }
-        .login-modal { background:var(--card-bg); backdrop-filter:blur(24px); border-radius:var(--border-radius-card); border:1px solid var(--glass-border); box-shadow:var(--shadow-soft); padding:32px 28px; max-width:440px; width:92%; max-height:90vh; overflow-y:auto; position:relative; color:var(--text-main); transform:scale(0.95); transition:transform 0.25s ease; }
-        .login-overlay.open .login-modal { transform:scale(1); }
+        .login-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:9999; display:flex; align-items:center; justify-content:center; opacity:0; visibility:hidden; transition:opacity 0.3s ease, visibility 0s 0.3s; }
+        .login-overlay.open { opacity:1; visibility:visible; transition:opacity 0.3s ease, visibility 0s 0s; }
+        .login-modal { background:var(--card-bg); backdrop-filter:blur(24px); border-radius:var(--border-radius-card); border:1px solid var(--glass-border); box-shadow:var(--shadow-soft); padding:32px 28px; max-width:440px; width:92%; max-height:90vh; overflow-y:auto; position:relative; color:var(--text-main); transform:scale(0.9) translateY(20px); opacity:0; transition:transform 0.35s cubic-bezier(0.2,0.9,0.4,1.1), opacity 0.25s ease; }
+        .login-overlay.open .login-modal { transform:scale(1) translateY(0); opacity:1; }
         .login-modal::-webkit-scrollbar { width:4px; }
         .login-modal::-webkit-scrollbar-track { background:transparent; }
         .login-modal::-webkit-scrollbar-thumb { background:var(--accent-blue); border-radius:10px; }
@@ -155,9 +163,9 @@
         .theme-mode-btn.active { background:var(--accent-blue); color:white; box-shadow:0 0 8px var(--accent-blue); }
 
         .dev-modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); z-index:1100; opacity:0; visibility:hidden; transition:opacity 0.25s, visibility 0s 0.25s; display:flex; align-items:center; justify-content:center; }
-        .dev-modal-overlay.open { opacity:1; visibility:visible; }
-        .dev-modal { background:var(--dev-modal-bg); backdrop-filter:blur(18px); border-radius:40px; width:min(450px,88%); max-width:480px; border:1px solid var(--modal-border); box-shadow:0 30px 45px -15px black; padding:1.8rem 1.8rem 2rem; transition:transform 0.2s; transform:scale(0.96); }
-        .dev-modal-overlay.open .dev-modal { transform:scale(1); }
+        .dev-modal-overlay.open { opacity:1; visibility:visible; transition:opacity 0.3s ease, visibility 0s 0s; }
+        .dev-modal { background:var(--dev-modal-bg); backdrop-filter:blur(18px); border-radius:40px; width:min(450px,88%); max-width:480px; border:1px solid var(--modal-border); box-shadow:0 30px 45px -15px black; padding:1.8rem 1.8rem 2rem; transform:scale(0.85) translateY(30px); opacity:0; transition:transform 0.4s cubic-bezier(0.2,0.9,0.4,1.1), opacity 0.3s ease; }
+        .dev-modal-overlay.open .dev-modal { transform:scale(1) translateY(0); opacity:1; }
         .dev-modal-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:1.5rem; border-bottom:1px solid var(--glass-border); padding-bottom:12px; }
         .dev-modal-header h3 { font-size:1.6rem; font-weight:700; background:linear-gradient(135deg,#eef5ff,#7bc5ff); background-clip:text; -webkit-background-clip:text; color:transparent; }
         .close-dev-modal { background:none; border:none; font-size:28px; color:var(--text-dim); cursor:pointer; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:30px; transition:0.2s; }
@@ -177,7 +185,7 @@
         .loading-screen.fade-out { opacity:0; visibility:hidden; }
         .linear-loader-container { width:260px; text-align:center; }
         .linear-progress-bar { width:100%; height:4px; background:rgba(59,130,246,0.3); border-radius:4px; overflow:hidden; margin-bottom:12px; }
-        .linear-progress-fill { width:0%; height:100%; background:linear-gradient(90deg,#3b82f6,#7bc5ff); border-radius:4px; animation:linearLoad 2s ease-out forwards; }
+        .linear-progress-fill { width:0%; height:100%; background:linear-gradient(90deg,#3b82f6,#7bc5ff); border-radius:4px; }
         @keyframes linearLoad { 0%{ width:0%; } 100%{ width:100%; } }
         .loading-text { color:#7bc5ff; font-size:0.9rem; letter-spacing:2px; }
 
@@ -248,6 +256,7 @@
     <div style="max-height:90%; overflow-y:auto;">
         <div class="setting-group"><label>界面主题</label><div class="theme-switch-group"><button id="themeDarkBtn" class="theme-mode-btn active">深色模式</button><button id="themeLightBtn" class="theme-mode-btn">浅色模式</button></div></div>
         <div class="setting-group"><label>入场动画</label><div class="theme-switch-group"><button id="animOnBtn" class="theme-mode-btn active">开启</button><button id="animOffBtn" class="theme-mode-btn">关闭</button></div></div>
+        <div class="setting-group"><label>加载画面</label><div class="theme-switch-group"><button id="loadOnBtn" class="theme-mode-btn active">显示</button><button id="loadOffBtn" class="theme-mode-btn">跳过</button></div></div>
         <div class="setting-group"><label>加载画面时长 <span id="loadTimeVal">1.2s</span></label><input type="range" id="loadTime" min="0.1" max="2" step="0.1" value="1.2"></div>
         <div class="setting-group"><label>动画速度 <span id="animSpeedVal">0.9s</span></label><input type="range" id="animSpeed" min="0.1" max="2" step="0.1" value="0.9"></div>
         <div class="setting-group"><label>背景主色</label><input type="color" id="bgColorPicker" value="#0a2a3f"></div>
@@ -444,6 +453,8 @@
         const loadingScreen = document.getElementById('loadingScreen');
         const mainContent = document.getElementById('mainContent');
         const showAnim = localStorage.getItem('ui_anim') !== 'off';
+        const showLoading = localStorage.getItem('ui_loading') !== 'off';
+        if(!showLoading) document.body.classList.add('no-loading');
         const loadDuration = parseFloat(localStorage.getItem('ui_loadTime') || '1.2') * 1000;
         const animSpeed = parseFloat(localStorage.getItem('ui_animSpeed') || '0.9');
         if(loadingScreen) {
@@ -462,13 +473,20 @@
 
         const loadTimeSlider = document.getElementById('loadTime');
         const loadTimeVal = document.getElementById('loadTimeVal');
+        const progressStyle = document.createElement('style');
+        document.head.appendChild(progressStyle);
+        function updateLoadTime(val){
+            loadTimeVal.textContent = val + 's';
+            localStorage.setItem('ui_loadTime', val);
+            progressStyle.textContent = `.linear-progress-fill{animation:linearLoad ${val}s ease-out forwards} @keyframes linearLoad{0%{width:0%}100%{width:100%}}`;
+        }
         if(loadTimeSlider) {
-            loadTimeSlider.value = parseFloat(localStorage.getItem('ui_loadTime') || '1.2');
-            loadTimeVal.textContent = loadTimeSlider.value + 's';
-            loadTimeSlider.addEventListener('input', () => {
-                loadTimeVal.textContent = loadTimeSlider.value + 's';
-                localStorage.setItem('ui_loadTime', loadTimeSlider.value);
-            });
+            const saved = localStorage.getItem('ui_loadTime') || '1.2';
+            loadTimeSlider.value = saved;
+            updateLoadTime(saved);
+            loadTimeSlider.addEventListener('input', () => updateLoadTime(loadTimeSlider.value));
+        } else {
+            progressStyle.textContent = '.linear-progress-fill{animation:linearLoad 1.2s ease-out forwards} @keyframes linearLoad{0%{width:0%}100%{width:100%}}';
         }
 
         const animSpeedSlider = document.getElementById('animSpeed');
@@ -615,11 +633,40 @@
         // 入场动画开关
         const animOnBtn = document.getElementById('animOnBtn');
         const animOffBtn = document.getElementById('animOffBtn');
+        function setAnimEnabled(on) {
+            if(on) {
+                document.body.classList.remove('no-anim');
+                animOnBtn.classList.add('active'); animOffBtn.classList.remove('active');
+                localStorage.setItem('ui_anim', 'on');
+            } else {
+                document.body.classList.add('no-anim');
+                animOffBtn.classList.add('active'); animOnBtn.classList.remove('active');
+                localStorage.setItem('ui_anim', 'off');
+            }
+        }
         const animEnabled = localStorage.getItem('ui_anim') !== 'off';
-        if(animEnabled){ animOnBtn.classList.add('active'); animOffBtn.classList.remove('active'); }
-        else { animOffBtn.classList.add('active'); animOnBtn.classList.remove('active'); }
-        animOnBtn.addEventListener('click',()=>{ localStorage.setItem('ui_anim','on'); animOnBtn.classList.add('active'); animOffBtn.classList.remove('active'); });
-        animOffBtn.addEventListener('click',()=>{ localStorage.setItem('ui_anim','off'); animOffBtn.classList.add('active'); animOnBtn.classList.remove('active'); });
+        setAnimEnabled(animEnabled);
+        animOnBtn.addEventListener('click', ()=>setAnimEnabled(true));
+        animOffBtn.addEventListener('click', ()=>setAnimEnabled(false));
+
+        // 加载画面开关
+        const loadOnBtn = document.getElementById('loadOnBtn');
+        const loadOffBtn = document.getElementById('loadOffBtn');
+        function setLoading(on) {
+            if(on) {
+                document.body.classList.remove('no-loading');
+                loadOnBtn.classList.add('active'); loadOffBtn.classList.remove('active');
+                localStorage.setItem('ui_loading', 'on');
+            } else {
+                document.body.classList.add('no-loading');
+                loadOffBtn.classList.add('active'); loadOnBtn.classList.remove('active');
+                localStorage.setItem('ui_loading', 'off');
+            }
+        }
+        if(showLoading){ loadOnBtn.classList.add('active'); loadOffBtn.classList.remove('active'); }
+        else { loadOffBtn.classList.add('active'); loadOnBtn.classList.remove('active'); }
+        loadOnBtn.addEventListener('click', ()=>setLoading(true));
+        loadOffBtn.addEventListener('click', ()=>setLoading(false));
 
         document.querySelectorAll('.copy-btn, .copy-ip-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
