@@ -98,9 +98,20 @@ async function questions(req, res) {
         if (!title || !content) return jsonRes(res, 400, { message: '请填写标题和内容' });
 
         try {
+            // 手动计算编号：取当前最大编号 + 1（删除后不会留空洞）
+            const { data: maxRow } = await supabase
+                .from('questions')
+                .select('question_number')
+                .order('question_number', { ascending: false })
+                .limit(1)
+                .single();
+
+            const nextNum = (maxRow?.question_number || 0) + 1;
+
             const { data, error } = await supabase
                 .from('questions')
                 .insert({
+                    question_number: nextNum,
                     author_id: decoded.id,
                     author_email: decoded.email,
                     title,
