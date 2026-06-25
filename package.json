@@ -6,7 +6,14 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "2.39.0",
+    "jose": "5.9.0",
     "jsonwebtoken": "9.0.0",
     "nodemailer": "6.9.7"
+  },
+  "cloudflare": {
+    "dependencies": {
+      "@supabase/supabase-js": "2.39.0",
+      "jose": "5.9.0"
+    }
   }
 }
