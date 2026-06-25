@@ -39,7 +39,7 @@ async function cln(env){let dl=0,fm=new Date(Date.now()-3e5).toISOString(),d=awa
 async function en(env,items){if(!items?.length)return items;let ids=[...new Set(items.map(i=>i.author_id).filter(Boolean))];if(!ids.length)return items;let nm={};for(let id of ids){try{let u=await gu(env,id);nm[id]=u?.user_metadata?.game_id||u?.user_metadata?.display_name||''}catch(_){}}return items.map(i=>({...i,author_name:nm[i.author_id]||(i.author_email||'').split('@')[0]}))}
 
 // ===== 主路由 =====
-export default{async fetch(request,env){let url=new URL(request.url),p=url.pathname.replace(/^\/api\//,'').replace(/\/$/,'')||'ping';if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors()});try{
+export default{async fetch(request,env){let url=new URL(request.url),p=url.pathname.replace(/^\/api\//,'').replace(/^\/+/,'').replace(/\/$/,'')||'ping';if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors()});try{
 
 if(p==='ping')return json({ok:true,time:new Date().toISOString(),platform:'Cloudflare Workers'});
 
