@@ -1,10 +1,10 @@
 /**
  * 灯雪镇 Cloudflare Workers 后端
- * 替换 Vercel Serverless Functions，国内可正常访问
+ * 无依赖，直接部署
  */
 
-import { createClient } from '@supabase/supabase-js';
-import * as jose from 'jose';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import * as jose from 'https://esm.sh/jose@5';
 
 // ===== 初始化 Supabase =====
 function getSupabase(env) {
