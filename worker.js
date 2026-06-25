@@ -1,181 +1,94 @@
 /**
- * 灯雪镇 Cloudflare Workers - 零依赖
+ * 灯雪镇 Cloudflare Workers 完整版
  */
-function cors() {
-    return {
-        'Access-Control-Allow-Origin': 'https://tr114512.github.io',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, DELETE',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'X-Content-Type-Options': 'nosniff'
-    };
-}
-function json(data, status = 200) {
-    return new Response(JSON.stringify(data), { status, headers: { ...cors(), 'Content-Type': 'application/json; charset=utf-8' } });
-}
+function cors(){return{'Access-Control-Allow-Origin':'https://tr114512.github.io','Access-Control-Allow-Methods':'GET,POST,OPTIONS,DELETE','Access-Control-Allow-Headers':'Content-Type,Authorization','X-Content-Type-Options':'nosniff'}}
+function json(d,s=200){return new Response(JSON.stringify(d),{status:s,headers:{...cors(),'Content-Type':'application/json;charset=utf-8'}})}
 
-// ===== btoa 安全版（避免 String.fromCharCode spread 栈溢出）=====
-function safeBtoa(buf) {
-    let binary = '';
-    const chunk = 8192;
-    for (let i = 0; i < buf.length; i += chunk) {
-        binary += String.fromCharCode(...buf.slice(i, i + chunk));
-    }
-    return btoa(binary);
-}
+// btoa 安全版
+function safeBtoa(b){let s='';for(let i=0;i<b.length;i+=8192)s+=String.fromCharCode(...b.slice(i,i+8192));return btoa(s)}
+function b64url(b){return safeBtoa(b).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_')}
+function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
 
-function b64url(buf) { return safeBtoa(buf).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_'); }
-function b64urlDecode(str) {
-    str = str.replace(/-/g, '+').replace(/_/g, '/');
-    while (str.length % 4) str += '=';
-    return Uint8Array.from(atob(str), c => c.charCodeAt(0));
-}
+async function signJWT(p,sec){let e=new TextEncoder(),k=await crypto.subtle.importKey('raw',e.encode(sec),{name:'HMAC',hash:'SHA-256'},false,['sign']),h=b64url(e.encode(JSON.stringify({alg:'HS256',typ:'JWT'}))),b=b64url(e.encode(JSON.stringify({...p,exp:Math.floor(Date.now()/1e3)+604800}))),s=b64url(await crypto.subtle.sign('HMAC',k,e.encode(h+'.'+b)));return h+'.'+b+'.'+s}
+async function verifyJWT(tok,sec){let p=tok.split('.');if(p.length!==3)throw Error('bad');let e=new TextEncoder(),k=await crypto.subtle.importKey('raw',e.encode(sec),{name:'HMAC',hash:'SHA-256'},false,['verify']),ok=await crypto.subtle.verify('HMAC',k,b64d(p[2]),e.encode(p[0]+'.'+p[1]));if(!ok)throw Error('bad');return JSON.parse(new TextDecoder().decode(b64d(p[1])))}
 
-// ===== JWT =====
-async function signJWT(payload, secret) {
-    const enc = new TextEncoder();
-    const k = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-    const h = b64url(enc.encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' })));
-    const b = b64url(enc.encode(JSON.stringify({ ...payload, exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 })));
-    const s = b64url(await crypto.subtle.sign('HMAC', k, enc.encode(`${h}.${b}`)));
-    return `${h}.${b}.${s}`;
-}
-async function verifyJWT(token, secret) {
-    const p = token.split('.'); if (p.length !== 3) throw new Error('invalid');
-    const enc = new TextEncoder();
-    const k = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
-    const ok = await crypto.subtle.verify('HMAC', k, b64urlDecode(p[2]), enc.encode(`${p[0]}.${p[1]}`));
-    if (!ok) throw new Error('invalid');
-    return JSON.parse(new TextDecoder().decode(b64urlDecode(p[1])));
-}
+// Supabase
+function sa(env,p,o={}){return fetch(env.SUPABASE_URL+'/rest/v1'+p,{...o,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json',...o.headers}})}
+function aa(env,p,o={}){return fetch(env.SUPABASE_URL+'/auth/v1/admin'+p,{...o,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json',...o.headers}})}
+function au(env,p,o={}){return fetch(env.SUPABASE_URL+'/auth/v1'+p,{...o,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json',...o.headers}})}
+async function lu(env,pg=1,pp=500){let r=await aa(env,'/users?page='+pg+'&per_page='+pp);return r.ok?await r.json():{users:[]}}
+async function gu(env,uid){let r=await aa(env,'/users/'+uid);return r.ok?await r.json():null}
+async function du(env,uid){return aa(env,'/users/'+uid,{method:'DELETE'})}
+async function uu(env,uid,d){return aa(env,'/users/'+uid,{method:'PUT',body:JSON.stringify(d)})}
+async function cu(env,d){return aa(env,'/users',{method:'POST',body:JSON.stringify(d)})}
 
-// ===== Supabase REST =====
-function sa(env, path, opts = {}) {
-    return fetch(`${env.SUPABASE_URL}/rest/v1${path}`, { ...opts, headers: { 'apikey': env.SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json', ...opts.headers } });
-}
-async function authAdmin(env, path, opts = {}) {
-    return fetch(`${env.SUPABASE_URL}/auth/v1/admin${path}`, { ...opts, headers: { 'apikey': env.SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json', ...opts.headers } });
-}
-async function authAPI(env, path, opts = {}) {
-    return fetch(`${env.SUPABASE_URL}/auth/v1${path}`, { ...opts, headers: { 'apikey': env.SUPABASE_SERVICE_ROLE_KEY, 'Content-Type': 'application/json', ...opts.headers } });
-}
-async function listUsers(env, page = 1, pp = 500) { const r = await authAdmin(env, `/users?page=${page}&per_page=${pp}`); return r.ok ? await r.json() : { users: [] }; }
-async function getUser(env, uid) { const r = await authAdmin(env, `/users/${uid}`); return r.ok ? await r.json() : null; }
-async function delUser(env, uid) { return authAdmin(env, `/users/${uid}`, { method: 'DELETE' }); }
-async function updUser(env, uid, data) { return authAdmin(env, `/users/${uid}`, { method: 'PUT', body: JSON.stringify(data) }); }
-async function addUser(env, data) { return authAdmin(env, '/users', { method: 'POST', body: JSON.stringify(data) }); }
+// 角色
+function nr(r){return(r==='super_admin'||r==='admin')?'admin':'user'}
+async function grole(env,uid,email){try{let u=await gu(env,uid);if(u?.user_metadata?.role)return nr(u.user_metadata.role)}catch(_){}try{let r=await sa(env,'/profiles?id=eq.'+uid+'&select=role'),d=await r.json();if(d?.[0]?.role)return nr(d[0].role)}catch(_){}let adm=(env.ADMIN_EMAILS||'').split(',').map(e=>e.trim().toLowerCase());return adm.includes((email||'').toLowerCase())?'admin':'user'}
+async function rrole(env,req,min){let a=req.headers.get('Authorization');if(!a)return null;try{let t=a.split(' ')[1],d=await verifyJWT(t,env.JWT_SECRET),r=await grole(env,d.id,d.email);return({admin:1,user:0})[r]>=({admin:1,user:0})[min]?{...d,role:r}:null}catch(_){return null}}
 
-// ===== 角色 =====
-function nr(r) { return (r === 'super_admin' || r === 'admin') ? 'admin' : 'user'; }
-async function getUserRole(env, uid, email) {
-    try { const u = await getUser(env, uid); if (u?.user_metadata?.role) return nr(u.user_metadata.role); } catch (_) { }
-    try { const r = await sa(env, `/profiles?id=eq.${uid}&select=role`); const d = await r.json(); if (d?.[0]?.role) return nr(d[0].role); } catch (_) { }
-    const admins = (env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
-    return admins.includes((email || '').toLowerCase()) ? 'admin' : 'user';
-}
-async function requireRole(env, req, minRole) {
-    const a = req.headers.get('Authorization'); if (!a) return null;
-    try {
-        const t = a.split(' ')[1]; const d = await verifyJWT(t, env.JWT_SECRET);
-        const r = await getUserRole(env, d.id, d.email);
-        return ({ admin: 1, user: 0 })[r] >= ({ admin: 1, user: 0 })[minRole] ? { ...d, role: r } : null;
-    } catch (_) { return null; }
-}
-
-// ===== 工具 =====
-function getIP(r) { return r.headers.get('CF-Connecting-IP') || 'unknown'; }
-function genCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
-async function sendMail(env, to, subj, html) {
-    try { await fetch('https://api.mailchannels.net/tx/v1/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ personalizations: [{ to: [{ email: to }] }], from: { email: env.EMAIL_FROM || 'noreply@lighttown.dev', name: '灯雪镇' }, subject: subj, content: [{ type: 'text/html', value: html }] }) }); } catch (_) { }
-}
-async function logLogin(env, email, ip, ok, reason) { try { await sa(env, '/login_logs', { method: 'POST', body: JSON.stringify({ email, ip, success: ok, reason, created_at: new Date().toISOString() }) }); } catch (_) { } }
-async function logAudit(env, op, act, target) { try { await sa(env, '/audit_logs', { method: 'POST', body: JSON.stringify({ operator_email: op.email, operator_id: op.id, action: act, target, created_at: new Date().toISOString() }) }); } catch (_) { } }
-async function checkRate(env, ip) {
-    try {
-        const t = new Date(); const tenMin = new Date(t - 10 * 60 * 1000).toISOString(); const dayAgo = new Date(t - 24 * 60 * 60 * 1000).toISOString();
-        const c1 = await sa(env, `/reg_attempts?select=id&ip=eq.${encodeURIComponent(ip)}&created_at=gte.${tenMin}`, { headers: { 'Prefer': 'count=exact' } });
-        if (parseInt(c1.headers.get('content-range')?.split('/')[1] || '0') >= 5) return { blocked: true, reason: '操作太频繁，请10分钟后再试' };
-        const c2 = await sa(env, `/reg_attempts?select=id&ip=eq.${encodeURIComponent(ip)}&created_at=gte.${dayAgo}`, { headers: { 'Prefer': 'count=exact' } });
-        if (parseInt(c2.headers.get('content-range')?.split('/')[1] || '0') >= 15) return { blocked: true, reason: '该IP注册过于频繁，已封禁24小时' };
-    } catch (_) { }
-    return { blocked: false };
-}
-async function recIP(env, ip, email) { try { await sa(env, '/reg_attempts', { method: 'POST', body: JSON.stringify({ ip, email, created_at: new Date().toISOString() }) }); } catch (_) { } }
-async function cleanup(env) {
-    let del = 0; const fiveMin = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const d = await listUsers(env, 1, 100);
-    for (const u of (d.users || [])) { if (!u.email_confirmed_at && u.created_at < fiveMin) { try { await delUser(env, u.id); del++; } catch (_) { } } }
-    return del;
-}
-async function enrichNames(env, items) {
-    if (!items?.length) return items;
-    const ids = [...new Set(items.map(i => i.author_id).filter(Boolean))]; if (!ids.length) return items;
-    const names = {};
-    for (const id of ids) { try { const u = await getUser(env, id); names[id] = u?.user_metadata?.game_id || u?.user_metadata?.display_name || ''; } catch (_) { } }
-    return items.map(i => ({ ...i, author_name: names[i.author_id] || (i.author_email || '').split('@')[0] }));
-}
+// 工具
+function ip(req){return req.headers.get('CF-Connecting-IP')||'unknown'}
+function gc(){return String(Math.floor(1e5+Math.random()*9e5))}
+async function sm(env,to,sub,html){try{await fetch('https://api.mailchannels.net/tx/v1/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({personalizations:[{to:[{email:to}]}],from:{email:env.EMAIL_FROM||'noreply@lt.dev',name:'灯雪镇'},subject:sub,content:[{type:'text/html',value:html}]})})}catch(_){}}
+async function ll(env,em,ip,ok,rs){try{await sa(env,'/login_logs',{method:'POST',body:JSON.stringify({email:em,ip,success:ok,reason:rs,created_at:new Date().toISOString()})})}catch(_){}}
+async function la(env,op,act,tg){try{await sa(env,'/audit_logs',{method:'POST',body:JSON.stringify({operator_email:op.email,operator_id:op.id,action:act,target:tg,created_at:new Date().toISOString()})})}catch(_){}}
+async function cr(env,ip){try{let n=new Date(),t=new Date(n-6e5).toISOString(),d=new Date(n-864e5).toISOString(),c1=await sa(env,'/reg_attempts?select=id&ip=eq.'+encodeURIComponent(ip)+'&created_at=gte.'+t,{headers:{'Prefer':'count=exact'}});if(parseInt(c1.headers.get('content-range')?.split('/')[1]||'0')>=5)return{blocked:true,reason:'操作太频繁，请10分钟后再试'};let c2=await sa(env,'/reg_attempts?select=id&ip=eq.'+encodeURIComponent(ip)+'&created_at=gte.'+d,{headers:{'Prefer':'count=exact'}});if(parseInt(c2.headers.get('content-range')?.split('/')[1]||'0')>=15)return{blocked:true,reason:'该IP注册过于频繁，已封禁24小时'}}catch(_){}return{blocked:false}}
+async function ri(env,ip,em){try{await sa(env,'/reg_attempts',{method:'POST',body:JSON.stringify({ip,email:em,created_at:new Date().toISOString()})})}catch(_){}}
+async function cln(env){let dl=0,fm=new Date(Date.now()-3e5).toISOString(),d=await lu(env,1,100);for(let u of(d.users||[])){if(!u.email_confirmed_at&&u.created_at<fm){try{await du(env,u.id);dl++}catch(_){}}}return dl}
+async function en(env,items){if(!items?.length)return items;let ids=[...new Set(items.map(i=>i.author_id).filter(Boolean))];if(!ids.length)return items;let nm={};for(let id of ids){try{let u=await gu(env,id);nm[id]=u?.user_metadata?.game_id||u?.user_metadata?.display_name||''}catch(_){}}return items.map(i=>({...i,author_name:nm[i.author_id]||(i.author_email||'').split('@')[0]}))}
 
 // ===== 主路由 =====
-export default {
-    async fetch(request, env) {
-        const url = new URL(request.url);
-        const path = url.pathname.replace(/^\/api\//, '').replace(/\/$/, '') || 'ping';
-        if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors() });
+export default{async fetch(request,env){let url=new URL(request.url),p=url.pathname.replace(/^\/api\//,'').replace(/\/$/,'')||'ping';if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors()});try{
 
-        try {
-            if (path === 'ping') return json({ ok: true, time: new Date().toISOString(), platform: 'Cloudflare Workers' });
+if(p==='ping')return json({ok:true,time:new Date().toISOString(),platform:'Cloudflare Workers'});
 
-            // === Auth ===
-            if (path === 'login' && request.method === 'POST') {
-                const { email, password } = await request.json();
-                if (!email || !password) return json({ message: '请填写完整信息' }, 400);
-                const ip = getIP(request);
-                const r = await authAPI(env, `/token?grant_type=password`, { method: 'POST', body: JSON.stringify({ email, password }) });
-                const d = await r.json();
-                if (!r.ok) { await logLogin(env, email, ip, false, d.error_description || d.msg); return json({ message: d.error_description || d.msg || '登录失败' }, 400); }
-                await logLogin(env, email, ip, true);
-                const token = await signJWT({ id: d.user.id, email: d.user.email }, env.JWT_SECRET);
-                return json({ message: '登录成功', user: { email: d.user.email, id: d.user.id }, token });
-            }
+// login
+if(p==='login'&&request.method==='POST'){let{email,password}=await request.json();if(!email||!password)return json({message:'请填写完整信息'},400);let i=ip(request),r=await au(env,'/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})}),d=await r.json();if(!r.ok){await ll(env,email,i,false,d.error_description||d.msg);return json({message:d.error_description||d.msg||'登录失败'},400)}await ll(env,email,i,true);let tok=await signJWT({id:d.user.id,email:d.user.email},env.JWT_SECRET);return json({message:'登录成功',user:{email:d.user.email,id:d.user.id},token:tok})}
 
-            if (path === 'register' && request.method === 'POST') {
-                const { email, password, qq, game_id, _website, _ts } = await request.json();
-                if (!email || !password) return json({ message: '请填写完整信息' }, 400);
-                if (_website?.length > 0) return json({ message: '注册成功！验证码已发送至您的邮箱', user: { email, id: 'fake' } }, 201);
-                const now = Date.now();
-                if (_ts && (now - parseInt(_ts) < 2000 || now - parseInt(_ts) > 600000)) return json({ message: '请稍后再试' }, 400);
-                const ip = getIP(request);
-                const rate = await checkRate(env, ip);
-                if (rate.blocked) return json({ message: rate.reason }, 429);
-                const sq = String(qq || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
-                const sg = String(game_id || '').replace(/[<>]/g, '').slice(0, 32);
-                const r = await addUser(env, { email, password, email_confirm: false, user_metadata: { qq: sq, game_id: sg } });
-                const d = await r.json();
-                if (!r.ok) {
-                    if (d.msg?.includes('already')) {
-                        const all = await listUsers(env);
-                        const ex = (all.users || []).find(u => u.email === email);
-                        if (ex) {
-                            if (ex.email_confirmed_at) return json({ message: '该邮箱已注册并验证，请直接登录' }, 400);
-                            const code = genCode();
-                            await sa(env, '/verification_codes', { method: 'POST', body: JSON.stringify({ user_id: ex.id, code, type: 'email_verify', expires_at: new Date(now + 10 * 60 * 1000).toISOString() }) });
-                            await sendMail(env, email, '【灯雪镇】验证码', `<p>验证码：<strong style="font-size:24px">${code}</strong></p><p>10分钟内有效</p>`);
-                            return json({ message: '重新发送了验证码', user: { email: ex.email, id: ex.id } });
-                        }
-                    }
-                    return json({ message: d.msg || '注册失败' }, 400);
-                }
-                await recIP(env, ip, email);
-                const code = genCode();
-                await sa(env, '/verification_codes', { method: 'POST', body: JSON.stringify({ user_id: d.id, code, type: 'email_verify', expires_at: new Date(now + 10 * 60 * 1000).toISOString() }) });
-                await sendMail(env, email, '【灯雪镇】验证码', `<p>验证码：<strong style="font-size:24px">${code}</strong></p><p>10分钟内有效</p>`);
-                return json({ message: '注册成功！验证码已发送至您的邮箱', user: { email: d.email, id: d.id } }, 201);
-            }
+// register
+if(p==='register'&&request.method==='POST'){let{email,password,qq,game_id,_website,_ts}=await request.json();if(!email||!password)return json({message:'请填写完整信息'},400);if(_website?.length>0)return json({message:'注册成功！验证码已发送至您的邮箱',user:{email,id:'fake'}},201);let n=Date.now();if(_ts&&(n-parseInt(_ts)<2e3||n-parseInt(_ts)>6e5))return json({message:'请稍后再试'},400);let i=ip(request),rt=await cr(env,i);if(rt.blocked)return json({message:rt.reason},429);let sq=String(qq||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,20),sg=String(game_id||'').replace(/[<>]/g,'').slice(0,32),r=await cu(env,{email,password,email_confirm:false,user_metadata:{qq:sq,game_id:sg}}),d=await r.json();if(!r.ok){if(d.msg?.includes('already')){let all=await lu(env),ex=(all.users||[]).find(u=>u.email===email);if(ex){if(ex.email_confirmed_at)return json({message:'该邮箱已注册并验证，请直接登录'},400);let cd=gc();await sa(env,'/verification_codes',{method:'POST',body:JSON.stringify({user_id:ex.id,code:cd,type:'email_verify',expires_at:new Date(n+6e5).toISOString()})});await sm(env,email,'【灯雪镇】验证码','<p>验证码：<strong style="font-size:24px">'+cd+'</strong></p><p>10分钟内有效</p>');return json({message:'重新发送了验证码',user:{email:ex.email,id:ex.id}})}}return json({message:d.msg||'注册失败'},400)}await ri(env,i,email);let cd=gc();await sa(env,'/verification_codes',{method:'POST',body:JSON.stringify({user_id:d.id,code:cd,type:'email_verify',expires_at:new Date(n+6e5).toISOString()})});await sm(env,email,'【灯雪镇】验证码','<p>验证码：<strong style="font-size:24px">'+cd+'</strong></p><p>10分钟内有效</p>');return json({message:'注册成功！验证码已发送至您的邮箱',user:{email:d.email,id:d.id}},201)}
 
-            // 其他路由省略，结构同上...
-            return json({ message: '功能开发中，请稍候...' });
+// verify-email
+if(p==='verify-email'&&request.method==='POST'){let{email,code}=await request.json();if(!email||!code)return json({message:'请提供邮箱和验证码'},400);let all=await lu(env),u=(all.users||[]).find(x=>x.email===email);if(!u)return json({message:'用户不存在'},404);let r=await sa(env,'/verification_codes?user_id=eq.'+u.id+'&code=eq.'+code+'&type=eq.email_verify&expires_at=gt.'+new Date().toISOString()+'&order=created_at.desc&limit=1'),rows=await r.json();if(!rows?.length)return json({message:'验证码无效或已过期'},400);await uu(env,u.id,{email_confirm:true});await sa(env,'/verification_codes?id=eq.'+rows[0].id,{method:'DELETE'});return json({message:'邮箱验证成功！'})}
 
-        } catch (e) {
-            return json({ message: '错误: ' + (e.message || '') }, 500);
-        }
-    }
-};
+// reset-password
+if(p==='reset-password'&&request.method==='POST'){let{email}=await request.json();if(!email)return json({message:'请输入邮箱'},400);let site=env.SITE_URL||'https://tr114512.github.io/light-snow-town/';await au(env,'/recover',{method:'POST',body:JSON.stringify({email,redirect_to:site+'?reset=true'})});return json({message:'重置邮件已发送'})}
+
+// change-password
+if(p==='change-password'&&request.method==='POST'){let op=await rrole(env,request,'user');if(!op)return json({message:'未登录'},401);let{oldPassword,newPassword}=await request.json();if(!oldPassword||!newPassword||newPassword.length<8)return json({message:'请填写完整信息'},400);let u=await gu(env,op.id);if(!u)return json({message:'用户不存在'},404);let ck=await au(env,'/token?grant_type=password',{method:'POST',body:JSON.stringify({email:u.email,password:oldPassword})});if(!ck.ok)return json({message:'当前密码错误'},400);await uu(env,op.id,{password:newPassword});return json({message:'密码已更新'})}
+
+// me
+if(p==='me'){let a=request.headers.get('Authorization');if(!a)return json({message:'未登录'},401);try{let d=await verifyJWT(a.split(' ')[1],env.JWT_SECRET),u=await gu(env,d.id);if(!u)return json({message:'用户不存在'},404);let rl=await grole(env,u.id,u.email),pf={};try{let r=await sa(env,'/profiles?id=eq.'+u.id+'&select=qq,game_id,display_name'),dd=await r.json();if(dd?.length)pf=dd[0]}catch(_){}return json({user:{email:u.email,id:u.id,role:rl,qq:pf.qq||u.user_metadata?.qq||'',game_id:pf.game_id||u.user_metadata?.game_id||'',display_name:pf.display_name||'',created_at:u.created_at,email_confirmed_at:u.email_confirmed_at}})}catch(_){return json({message:'Token无效'},401)}}
+
+// update-profile
+if(p==='update-profile'&&request.method==='POST'){let a=request.headers.get('Authorization');if(!a)return json({message:'未登录'},401);try{let d=await verifyJWT(a.split(' ')[1],env.JWT_SECRET),b=await request.json(),sq=String(b.qq||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,20),sg=String(b.game_id||'').replace(/[<>]/g,'').slice(0,32);await sa(env,'/profiles',{method:'POST',body:JSON.stringify({id:d.id,qq:sq,game_id:sg,updated_at:new Date().toISOString()}),headers:{'Prefer':'resolution=merge-duplicates'}});await uu(env,d.id,{user_metadata:{qq:sq,game_id:sg}});return json({message:'资料已更新'})}catch(_){return json({message:'Token无效'},401)}}
+
+// admin/users
+if(p==='admin/users'){let op=await rrole(env,request,'admin');if(!op)return json({message:'未登录或权限不足'},401);if(request.method==='POST'){let{action,userIds}=await request.json();if(action==='cleanup'){let c=await cln(env);return json({message:'已清理 '+c+' 个未验证账号'})}if(action==='batch-delete'&&Array.isArray(userIds)){let dl=0;for(let uid of userIds){if(uid!==op.id){try{await du(env,uid);dl++}catch(_){}}}return json({message:'已删除 '+dl+' 个用户'})}return json({message:'无效操作'},400)}let qp=Object.fromEntries(url.searchParams),all=[];for(let pg=1;pg<=4;pg++){let d=await lu(env,pg),b=d.users||[];all=all.concat(b);if(b.length<500)break}let pr=await sa(env,'/profiles?select=id,role,display_name,qq,game_id'),pfs=await pr.json(),rm={};(pfs||[]).forEach(x=>{rm[x.id]={role:x.role,display_name:x.display_name,qq:x.qq,game_id:x.game_id}});let list=all.map(u=>({id:u.id,email:u.email,role:nr(u.user_metadata?.role||rm[u.id]?.role||'user'),qq:rm[u.id]?.qq||u.user_metadata?.qq||'',game_id:rm[u.id]?.game_id||u.user_metadata?.game_id||'',display_name:rm[u.id]?.display_name||'',email_confirmed:!!u.email_confirmed_at,created_at:u.created_at,last_sign_in:u.last_sign_in_at}));if(qp.verified==='1')list=list.filter(u=>u.email_confirmed);if(qp.search){let q=qp.search.toLowerCase();list=list.filter(u=>u.email.toLowerCase().includes(q))}list.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));if(qp.format==='csv'){let h='编号,邮箱,QQ,游戏ID,状态,角色,注册时间\n',rows=list.map((u,i)=>`${i+1},"${u.email}","${u.qq||''}","${u.game_id||''}",${u.email_confirmed?'已验证':'未验证'},${u.role==='admin'?'管理员':'玩家'},"${new Date(u.created_at).toLocaleDateString('zh-CN')}"`).join('\n');return new Response('\uFEFF'+h+rows,{headers:{...cors(),'Content-Type':'text/csv;charset=utf-8','Content-Disposition':'attachment;filename=users.csv'}})}return json({total:list.length,operator_role:op.role,users:list.map((u,i)=>({...u,user_no:i+1}))})}
+
+// admin/dashboard
+if(p==='admin/dashboard'){let op=await rrole(env,request,'admin');if(!op)return json({message:'未登录或权限不足'},401);let t=0,v=0,uv=0,td=0,now=new Date().toISOString().slice(0,10);for(let pg=1;pg<=4;pg++){let d=await lu(env,pg),uu=d.users||[];if(!uu.length)break;t+=uu.length;uu.forEach(u=>{if(u.email_confirmed_at)v++;else uv++;if(u.created_at?.startsWith(now))td++})}let qc=await sa(env,'/questions?select=id',{headers:{'Prefer':'count=exact'}}),oc=await sa(env,'/questions?select=id&status=eq.open',{headers:{'Prefer':'count=exact'}});return json({stats:{totalUsers:t,verified:v,unverified:uv,todayReg:td,totalQuestions:parseInt(qc.headers.get('content-range')?.split('/')[1]||'0'),openQuestions:parseInt(oc.headers.get('content-range')?.split('/')[1]||'0')}})}
+
+// admin/delete-user
+if(p==='admin/delete-user'&&request.method==='POST'){let op=await rrole(env,request,'admin');if(!op)return json({message:'未登录或权限不足'},401);let{userId}=await request.json();if(!userId||userId===op.id)return json({message:'无效操作'},400);let u=await gu(env,userId);if(!u)return json({message:'用户不存在'},404);await du(env,userId);await la(env,op,'删除用户',u.email);return json({message:'已删除用户 '+u.email})}
+
+// admin/reset-user-password
+if(p==='admin/reset-user-password'&&request.method==='POST'){let op=await rrole(env,request,'admin');if(!op)return json({message:'未登录或权限不足'},401);let{userId,newPassword}=await request.json();if(!userId||!newPassword||newPassword.length<8)return json({message:'请提供有效信息'},400);let u=await gu(env,userId);if(!u)return json({message:'用户不存在'},404);await uu(env,userId,{password:newPassword});await la(env,op,'重置密码',u.email);return json({message:'已重置用户 '+u.email+' 的密码'})}
+
+// admin/set-role
+if(p==='admin/set-role'&&request.method==='POST'){let op=await rrole(env,request,'admin');if(!op)return json({message:'未登录或权限不足'},401);let{userId,role}=await request.json();if(!userId||!role||!['admin','user'].includes(role)||userId===op.id)return json({message:'无效操作'},400);let u=await gu(env,userId);if(!u)return json({message:'用户不存在'},404);await uu(env,userId,{user_metadata:{role}});await sa(env,'/profiles',{method:'POST',body:JSON.stringify({id:userId,role,updated_at:new Date().toISOString()}),headers:{'Prefer':'resolution=merge-duplicates'}});await la(env,op,'设置角色为'+role,u.email);return json({message:'已将用户 '+u.email+' 的角色更新为 '+role})}
+
+// qa/questions
+if(p==='qa/questions'){if(request.method==='POST'){let op=await rrole(env,request,'user');if(!op)return json({message:'请先登录'},401);let{title,content}=await request.json();if(!title||!content||title.length>200||content.length>5000)return json({message:'请填写有效内容'},400);let mr=await sa(env,'/questions?select=question_number&order=question_number.desc&limit=1'),mRows=await mr.json(),next=(mRows?.[0]?.question_number||0)+1,r=await sa(env,'/questions',{method:'POST',body:JSON.stringify({question_number:next,author_id:op.id,author_email:op.email,title,content})}),q=await r.json();return json({question:q?.[0]||q,message:'问题已发布'},201)}let qid=url.searchParams.get('id');if(qid){let qr=await sa(env,'/questions?id=eq.'+qid),q=await qr.json();if(!q?.length)return json({message:'问题不存在'},404);let ar=await sa(env,'/answers?question_id=eq.'+qid+'&order=created_at.asc'),cr=await sa(env,'/comments?question_id=eq.'+qid+'&order=created_at.asc'),aa=await ar.json(),cc=await cr.json(),all=[q[0],...(aa||[]),...(cc||[])],enr=await en(env,all);return json({question:enr[0],answers:enr.slice(1,1+(aa||[]).length),comments:enr.slice(1+(aa||[]).length)})}let qp=Object.fromEntries(url.searchParams),page=parseInt(qp.page)||1,lim=Math.min(parseInt(qp.limit)||20,50),off=(page-1)*lim,qPath='/questions?select=*&order=created_at.desc';if(qp.search)qPath+='&title=ilike.*'+encodeURIComponent(qp.search)+'*';if(qp.my==='1'){let a=request.headers.get('Authorization');if(!a)return json({message:'请先登录'},401);try{let d=await verifyJWT(a.split(' ')[1],env.JWT_SECRET);qPath+='&author_id=eq.'+d.id}catch(_){return json({message:'Token无效'},401)}}if(qp.author)qPath+='&author_id=eq.'+qp.author;let tr=await sa(env,qPath+'&limit=0',{headers:{'Prefer':'count=exact'}}),total=parseInt(tr.headers.get('content-range')?.split('/')[1]||'0'),qr=await sa(env,qPath+'&limit='+lim+'&offset='+off),qs=await qr.json(),enr=await en(env,qs||[]);for(let q of enr){let ac=await sa(env,'/answers?question_id=eq.'+q.id+'&select=id',{headers:{'Prefer':'count=exact'}}),cc=await sa(env,'/comments?question_id=eq.'+q.id+'&select=id',{headers:{'Prefer':'count=exact'}});q.answer_count=parseInt(ac.headers.get('content-range')?.split('/')[1]||'0');q.comment_count=parseInt(cc.headers.get('content-range')?.split('/')[1]||'0')}return json({questions:enr,total,page,lim,totalPages:Math.ceil(total/lim)||1})}
+
+// qa/answer
+if(p==='qa/answer'&&request.method==='POST'){let op=await rrole(env,request,'admin');if(!op)return json({message:'未登录或权限不足'},401);let{question_id,content}=await request.json();if(!question_id||!content||content.length>5000)return json({message:'请填写有效内容'},400);let r=await sa(env,'/answers',{method:'POST',body:JSON.stringify({question_id,author_id:op.id,author_email:op.email,content,is_admin_answer:true})});await sa(env,'/questions?id=eq.'+question_id,{method:'PATCH',body:JSON.stringify({status:'answered',updated_at:new Date().toISOString()})});return json({answer:await r.json(),message:'回答已发布'})}
+
+// qa/comment
+if(p==='qa/comment'&&request.method==='POST'){let a=request.headers.get('Authorization');if(!a)return json({message:'请先登录'},401);let d;try{d=await verifyJWT(a.split(' ')[1],env.JWT_SECRET)}catch(_){return json({message:'Token无效'},401)}let{question_id,content}=await request.json();if(!question_id||!content||content.length>2000)return json({message:'请填写有效内容'},400);let r=await sa(env,'/comments',{method:'POST',body:JSON.stringify({question_id,author_id:d.id,author_email:d.email,content})});return json({comment:await r.json(),message:'评论已发布'})}
+
+// qa/delete
+if(p==='qa/delete'&&request.method==='POST'){let op=await rrole(env,request,'admin');if(!op)return json({message:'未登录或权限不足'},401);let{question_id}=await request.json();if(!question_id)return json({message:'请提供问题ID'},400);await sa(env,'/questions?id=eq.'+question_id,{method:'DELETE'});return json({message:'问题已删除'})}
+
+return json({message:'未知接口: /'+p},404)}catch(e){return json({message:'服务器错误: '+(e.message||'')},500)}}}
