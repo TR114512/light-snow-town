@@ -328,7 +328,7 @@
 <div class="login-overlay" id="loginOverlay">
     <div class="login-modal">
         <button class="close-login" id="closeLoginBtn">✕</button>
-        <div class="modal-title">❄ 灯雪镇</div>
+        <div class="modal-title">灯雪镇</div>
 
         <!-- ====== 登录视图 ====== -->
         <div id="loginView" class="auth-view" style="display:block;">
@@ -419,7 +419,7 @@
         <div id="profileView" class="auth-view" style="display:none;">
             <div class="modal-sub">👋 欢迎回来，<span id="profileDisplayNameModal">用户</span></div>
             <div class="user-profile">
-                <div class="user-avatar" id="profileAvatarModal">❄</div>
+                <div class="user-avatar" id="profileAvatarModal">灯</div>
                 <div class="user-email" id="profileEmailModal">user@example.com</div>
                 <div class="user-meta">注册于 <span id="profileJoinDateModal">2025-01-01</span></div>
             </div>
@@ -897,7 +897,7 @@
 
             try {
                 const data = await apiCall('verify-email', { email, code });
-                showToast(data.message || '✅ 验证成功！正在登录...', 'success');
+                showToast(data.message || '验证成功！正在登录...', 'success');
                 // 隐藏验证码区
                 document.getElementById('regCodeGroupModal').style.display = 'none';
                 document.getElementById('registerFormModal').reset();
@@ -957,8 +957,8 @@
                 document.getElementById('profileEmailModal').textContent = user.email;
                 document.getElementById('profileJoinDateModal').textContent = new Date(user.created_at).toLocaleDateString('zh-CN');
                 document.getElementById('profileAvatarModal').textContent = user.email[0].toUpperCase();
-                document.getElementById('profileVerifiedModal').textContent = user.email_confirmed_at ? '✅ 已验证' : '⚠️ 未验证';
-                document.getElementById('profileStatusModal').textContent = '✅ 正常';
+                document.getElementById('profileVerifiedModal').textContent = user.email_confirmed_at ? '已验证' : '未验证';
+                document.getElementById('profileStatusModal').textContent = '正常';
                 document.getElementById('profileOldPwdModal').value = '';
                 document.getElementById('profileNewPwdModal').value = '';
                 document.getElementById('profileNewPwdConfirmModal').value = '';
@@ -1075,7 +1075,7 @@
                 hint.textContent = '⚠️ 需包含字母和数字';
                 hint.className = 'form-hint error';
             } else {
-                hint.textContent = '✅ 强度合格';
+                hint.textContent = '强度合格';
                 hint.className = 'form-hint success';
             }
         });
@@ -1113,7 +1113,7 @@
                 updateAuthButton(false);
             }
         })();
-        console.log('❄ 灯雪镇 · 账号系统已加载，后端 API:', API_BASE);
+        console.log('灯雪镇 · 账号系统已加载，后端 API:', API_BASE);
     })();
 </script>
 

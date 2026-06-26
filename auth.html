@@ -492,7 +492,7 @@
         <div class="auth-card">
 
             <div class="auth-header">
-                <h1>❄ 灯雪镇</h1>
+                <h1>灯雪镇</h1>
                 <p>账号中心 · 迷雾揭开无限的未来</p>
             </div>
 
@@ -612,7 +612,7 @@
             <div id="viewProfile" class="auth-view">
                 <div class="auth-subtitle">👋 欢迎回来，<span id="profileDisplayName">用户</span></div>
                 <div class="user-profile">
-                    <div class="user-avatar" id="profileAvatar">❄</div>
+                    <div class="user-avatar" id="profileAvatar">灯</div>
                     <div class="user-email" id="profileEmail">user@example.com</div>
                     <div class="user-meta">注册于 <span id="profileJoinDate">2025-01-01</span></div>
                 </div>
@@ -950,8 +950,8 @@
                     $('profileEmail').textContent = user.email;
                     $('profileJoinDate').textContent = new Date(user.created_at).toLocaleDateString('zh-CN');
                     $('profileAvatar').textContent = user.email[0].toUpperCase();
-                    $('profileVerified').textContent = user.email_confirmed_at ? '✅ 已验证' : '⚠️ 未验证';
-                    $('profileStatus').textContent = '✅ 正常';
+                    $('profileVerified').textContent = user.email_confirmed_at ? '已验证' : '未验证';
+                    $('profileStatus').textContent = '正常';
                     // 清空密码框
                     $('profileOldPwd').value = '';
                     $('profileNewPwd').value = '';
@@ -1064,12 +1064,12 @@
                     hint.textContent = '⚠️ 需包含字母和数字';
                     hint.className = 'form-hint error';
                 } else {
-                    hint.textContent = '✅ 密码强度合格';
+                    hint.textContent = '密码强度合格';
                     hint.className = 'form-hint success';
                 }
             });
 
-            console.log('❄ 灯雪镇 · 前后端分离账号系统已加载，后端 API:', API_BASE);
+            console.log('灯雪镇 · 前后端分离账号系统已加载，后端 API:', API_BASE);
         })();
     </script>
 
