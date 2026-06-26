@@ -276,30 +276,32 @@
 <!-- 隐私政策模态框 -->
 <div class="login-overlay" id="privacyOverlay">
     <div class="login-modal" style="text-align:left;line-height:1.8">
-        <button class="close-login" id="privacyCloseBtn">✕</button>
         <div class="modal-title" style="font-size:1.8rem;font-weight:800;color:var(--text-main);background:none;-webkit-text-fill-color:var(--text-main)">📜 隐私与条款</div>
         <div class="modal-sub"><span>请仔细阅读以下内容</span></div>
-        <div style="font-size:0.85rem;color:var(--text-main);max-height:45vh;overflow-y:auto;padding-right:8px">
+        <div style="font-size:0.85rem;color:var(--text-main);max-height:40vh;overflow-y:auto;padding-right:8px">
             <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">1. 信息收集</strong><br>我们仅收集您主动提供的电子邮箱、QQ号、游戏ID等信息，用于账号注册和社区服务。</p>
             <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">2. 信息使用</strong><br>您的邮箱仅用于账号验证、密码重置和重要通知。QQ号和游戏ID仅用于社区展示。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">3. 信息保护</strong><br>您的密码经过加密存储，我们不会向任何第三方出售或分享您的个人信息。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">4. Cookie 与本地存储</strong><br>我们使用本地存储（LocalStorage）保存您的登录状态、主题偏好和设置选项，不涉及跨站追踪。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">5. 账号管理</strong><br>未验证邮箱的账号将在注册5分钟后自动清除。已验证账号可联系管理员删除。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">6. 社区规范</strong><br>灯雪镇为 Minecraft 社区网站，禁止发布违法、色情、暴力、人身攻击等内容。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">7. 免责声明</strong><br>用户发言仅代表个人观点，与本站立场无关。我们保留更新本政策的权利。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">3. 信息保护</strong><br>您的密码经过 Supabase 加密存储，我们不会向任何第三方出售或分享您的个人信息。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">4. 第三方数据收集</strong><br>Supabase（数据库与认证）收集账号邮箱、加密密码、注册时间；MailChannels（邮件发送）仅传递发信所需的邮箱地址，不存储；GitHub Pages（静态托管）不收集任何个人信息。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">5. 第三方共享清单</strong><br>我们不会主动共享您的数据。法律要求或政府机关依法调取时除外。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">6. 开源协议</strong><br>本项目前端基于 MIT 协议开源（https://github.com/TR114512/light-snow-town）。使用以下开源技术：Supabase（Apache 2.0）、Deno（MIT）。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">7. Cookie 与本地存储</strong><br>我们使用本地存储（LocalStorage）保存登录状态、主题偏好和动画设置，不涉及跨站追踪，不用于广告或分析。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">8. 账号管理</strong><br>未验证邮箱的账号将在注册5分钟后自动清除。已验证账号可联系管理员删除，删除后数据不可恢复。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">9. 社区规范</strong><br>禁止发布违法、色情、暴力、人身攻击内容。违规内容将被删除并封禁账号。</p>
+            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">10. 免责声明</strong><br>用户发言仅代表个人观点。我们保留更新本政策的权利，重大变更将弹窗通知。</p>
         </div>
         <div style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px">
             <input type="checkbox" id="privacyAgree" style="width:16px;height:16px;accent-color:var(--accent-blue)">
-            <label for="privacyAgree" style="font-size:0.85rem;color:var(--text-main);cursor:pointer">我已阅读并同意以上条款</label>
+            <label for="privacyAgree" style="font-size:0.85rem;color:var(--text-main);cursor:pointer">我已阅读并同意以上全部条款</label>
         </div>
-        <button class="btn-primary" id="privacyConfirmBtn" style="margin-top:12px;width:100%" disabled>确认并继续</button>
-        <button class="btn" id="privacyDenyBtn" style="margin-top:8px;width:100%;color:var(--danger);border-color:transparent;background:transparent">不同意，仅浏览</button>
+        <button class="btn-primary" id="privacyConfirmBtn" style="margin-top:12px;width:100%" disabled>✓ 同意并继续</button>
+        <button class="btn" id="privacyDenyBtn" style="margin-top:8px;width:100%;color:var(--text-dim);border-color:transparent;background:transparent">✕ 不同意，仅浏览</button>
     </div>
 </div>
 
-<div id="privacyBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:998;background:var(--drawer-bg);backdrop-filter:blur(12px);border-top:2px solid var(--accent-blue);padding:10px 20px;text-align:center;font-size:0.8rem;color:var(--text-main)">
-    <span style="opacity:0.8">🍪 本站使用本地存储保存您的偏好，继续使用即表示同意</span>
-    <a href="javascript:void(0)" onclick="document.getElementById('privacyOverlay').classList.add('open')" style="color:var(--accent-blue);margin-left:6px">隐私政策</a>
+<div id="privacyBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;background:var(--drawer-bg);backdrop-filter:blur(16px);border-top:2px solid var(--accent-blue);padding:12px 20px;text-align:center;font-size:0.82rem;color:var(--text-main);box-shadow:0 -4px 20px rgba(0,0,0,0.3)">
+    <span style="opacity:0.85">🔒 为保护您的隐私，使用本站前请先阅读并同意</span>
+    <a href="javascript:void(0)" onclick="document.getElementById('privacyOverlay').classList.add('open')" style="color:var(--accent-blue);font-weight:600;margin:0 6px">《隐私与条款》</a>
 </div>
 
 <div id="toastMsg" class="toast-notification"> 已复制</div>
@@ -1135,14 +1137,13 @@
     if(document.getElementById('privacyDenyBtn')) {
         document.getElementById('privacyDenyBtn').addEventListener('click', function(){
             if(privacyOverlay) privacyOverlay.classList.remove('open');
+            if(privacyBar) privacyBar.style.display = 'block';
         });
     }
-    if(document.getElementById('privacyCloseBtn')) {
-        document.getElementById('privacyCloseBtn').addEventListener('click', function(){
-            if(privacyOverlay) privacyOverlay.classList.remove('open');
-        });
-    }
+
     if(!privacyAccepted && privacyOverlay) privacyOverlay.classList.add('open');
+    if(!privacyAccepted && privacyBar) privacyBar.style.display = 'block';
+
     window.isPrivacyAccepted = function(){ return privacyAccepted; };
 })();
 </script>
