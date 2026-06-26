@@ -75,7 +75,7 @@
 <body>
 <div class="container">
     <header>
-        <h1>🛡 灯雪镇 · 管理面板</h1>
+        <h1>灯雪镇 · 管理面板</h1>
         <div class="nav">
             <span id="operatorInfo" style="font-size:0.8rem;color:var(--dim);"></span>
             <button class="btn" onclick="location.href='https://tr114512.github.io/light-snow-town/home.html'">← 返回主页</button>
@@ -94,16 +94,16 @@
     </div>
 
     <div class="toolbar">
-        <input class="search-box" id="searchInput" placeholder="🔍 搜索用户邮箱...">
-        <button class="btn sm" id="toggleUnverified">📋 仅已验证</button>
-        <button class="btn sm danger" id="cleanupBtn">🧹 清理未验证</button>
-        <button class="btn sm gold" id="openCreateUserModal">➕ 创建账号</button>
-        <button class="btn sm" id="openIpBanModal">🚫 IP 封禁</button>
-        <button class="btn sm danger" id="batchDeleteBtn" style="display:none">🗑 批量删除</button>
+        <input class="search-box" id="searchInput" placeholder="搜索用户邮箱...">
+        <button class="btn sm" id="toggleUnverified">仅已验证</button>
+        <button class="btn sm danger" id="cleanupBtn">清理未验证</button>
+        <button class="btn sm gold" id="openCreateUserModal">创建账号</button>
+        <button class="btn sm" id="openIpBanModal">IP 封禁</button>
+        <button class="btn sm danger" id="batchDeleteBtn" style="display:none">批量删除</button>
         <span class="stats" id="statsText">共 0 个用户</span>
     </div>
     <div class="toolbar" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:0.8rem">
-        <span style="color:var(--dim);">🕐 自动清理间隔：</span>
+        <span style="color:var(--dim);">自动清理间隔：</span>
         <select id="cleanupInterval" style="background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;margin-right:12px;">
             <option value="0">关闭</option>
             <option value="1">1 分钟</option>
@@ -140,7 +140,7 @@
 <!-- 创建账号模态窗 -->
 <div class="modal-overlay" id="createUserModalOverlay">
     <div class="modal-box">
-        <h3>➕ 创建账号（免邮箱验证）</h3>
+        <h3>创建账号（免邮箱验证）</h3>
         <div class="form-row">
             <input type="email" id="createEmail" placeholder="邮箱" required style="flex:2;min-width:150px">
             <input type="password" id="createPassword" placeholder="密码（≥8位）" style="flex:1;min-width:120px">
@@ -155,7 +155,7 @@
         </div>
         <div class="modal-actions">
             <button class="btn" id="closeCreateUserModal">取消</button>
-            <button class="btn gold" id="createUserBtn">✨ 创建</button>
+            <button class="btn gold" id="createUserBtn">创建</button>
         </div>
     </div>
 </div>
@@ -163,7 +163,7 @@
 <!-- IP 封禁模态窗 -->
 <div class="modal-overlay" id="ipBanModalOverlay">
     <div class="modal-box" style="max-width:600px">
-        <h3>🚫 IP 封禁管理</h3>
+        <h3>IP 封禁管理</h3>
         <div class="form-row">
             <input type="text" id="banIpInput" placeholder="IP 地址 (如 1.2.3.4)" style="flex:1;min-width:130px">
             <input type="text" id="banReasonInput" placeholder="封禁原因" style="flex:2;min-width:130px">
@@ -176,7 +176,7 @@
                 <option value="720">30 天</option>
                 <option value="0">永久</option>
             </select>
-            <button class="btn danger" id="banIpBtn">🔒 封禁</button>
+            <button class="btn danger" id="banIpBtn">封禁</button>
         </div>
         <div class="table-wrap" style="margin-top:12px">
             <table>
@@ -248,7 +248,7 @@
             }
             operatorRole = data.user.role;
             operatorEmail = data.user.email;
-            document.getElementById('operatorInfo').textContent = '👤 ' + operatorEmail + ' (' + (ROLE_LABELS[operatorRole]||operatorRole) + ')';
+            document.getElementById('operatorInfo').textContent = operatorEmail + ' (' + (ROLE_LABELS[operatorRole]||operatorRole) + ')';
             loadUsers();
         }catch(e){
             localStorage.removeItem('lt_token');
@@ -385,7 +385,7 @@
     });
     document.getElementById('toggleUnverified').addEventListener('click',function(){
         showAll = !showAll;
-        this.textContent = showAll ? '📋 仅已验证' : '📋 显示全部';
+        this.textContent = showAll ? '仅已验证' : '显示全部';
         loadUsers(document.getElementById('searchInput').value.trim());
     });
 
@@ -441,7 +441,7 @@
             if(data.message && data.message.includes('已清理')){
                 const count = parseInt(data.message) || 0;
                 if(count > 0) {
-                    toast('🕐 自动清理了 ' + count + ' 个未验证账号', 'ok');
+                    toast('自动清理了 ' + count + ' 个未验证账号', 'ok');
                     loadUsers();
                 }
             }
@@ -572,7 +572,7 @@
                     <td style="font-size:0.8rem;color:var(--dim)">${new Date(b.banned_at).toLocaleString('zh-CN')}</td>
                     <td><span class="ban-remaining ${cls}">${b.remaining_text}</span></td>
                     <td style="font-size:0.8rem;color:var(--dim)">${escHtml(b.banned_by)}</td>
-                    <td><button class="btn" style="font-size:0.7rem;padding:4px 12px;color:var(--success);border-color:rgba(34,197,94,0.4)" data-ip="${escHtml(b.ip)}" onclick="unbanIp(this.dataset.ip)">🔓 解封</button></td>
+                    <td><button class="btn" style="font-size:0.7rem;padding:4px 12px;color:var(--success);border-color:rgba(34,197,94,0.4)" data-ip="${escHtml(b.ip)}" onclick="unbanIp(this.dataset.ip)">解封</button></td>
                 </tr>`;
             }).join('');
         }catch(e){

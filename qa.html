@@ -76,13 +76,13 @@
             <span id="userInfo" style="color:var(--dim);font-size:0.8rem"></span>
             <button class="btn" id="loginBtn">登录</button>
             <button class="btn primary" id="askBtn" style="display:none">+ 提问题</button>
-            <button class="btn" id="myQuestionsBtn" style="display:none">📋 我的问题</button>
+            <button class="btn" id="myQuestionsBtn" style="display:none">我的问题</button>
             <button class="btn" onclick="location.href='https://tr114512.github.io/light-snow-town/home.html'">← 主页</button>
         </div>
     </header>
 
     <div style="display:flex;gap:8px;margin-bottom:16px">
-        <input class="form-control" id="searchInput" placeholder="🔍 搜索问题..." style="flex:1">
+        <input class="form-control" id="searchInput" placeholder="搜索问题..." style="flex:1">
         <button class="btn" id="searchBtn">搜索</button>
     </div>
 
@@ -144,7 +144,7 @@
             const data=await sf(API+'/me',{headers:{'Authorization':'Bearer '+token}});
             user=data.user;userRole=user.role||'user';
             localStorage.setItem('lt_user',JSON.stringify(user));
-            document.getElementById('userInfo').textContent='👤 '+(user.game_id||user.email.split('@')[0]);
+            document.getElementById('userInfo').textContent=(user.game_id||user.email.split('@')[0]);
             document.getElementById('loginBtn').textContent='退出';
             document.getElementById('loginBtn').onclick=logout;
             document.getElementById('askBtn').style.display='inline-block';
@@ -205,10 +205,10 @@
         list.innerHTML='<div class="empty">加载中...</div>';
 
         if(myMode){
-            btn.textContent = '📋 查看全部';
+            btn.textContent = '查看全部';
             btn.classList.add('primary');
         } else {
-            btn.textContent = '📋 我的问题';
+            btn.textContent = '我的问题';
             btn.classList.remove('primary');
         }
 
@@ -226,8 +226,8 @@
                 list.innerHTML = search
                     ? '<div class="empty">没有找到匹配的问题</div>'
                     : myMode
-                        ? '<div class="empty">你还没有提过问题 ✨</div>'
-                        : '<div class="empty">还没有问题，来提第一个吧 ✨</div>';
+                        ? '<div class="empty">你还没有提过问题</div>'
+                        : '<div class="empty">还没有问题，来提第一个吧</div>';
                 document.getElementById('pagination').innerHTML = '';
                 return;
             }
@@ -322,7 +322,7 @@
             <div class="detail-header">
                 <div></div>
                 <div style="display:flex;gap:6px">
-                    ${isAdmin?`<button class="btn danger sm" id="${uid}-delBtn">🗑 删除问题</button>`:''}
+                    ${isAdmin?`<button class="btn danger sm" id="${uid}-delBtn">删除问题</button>`:''}
                 </div>
             </div>
             <div class="detail-body">${esc(q.content)}</div>
@@ -331,7 +331,7 @@
             <div class="section-title">📝 回答 (${answers.length})</div>
             ${answers.map((a,i)=>`
                 <div class="reply-box ${a.is_admin_answer?'admin':''}">
-                    <div class="reply-author">${a.is_admin_answer?'🛡 管理员 ':'👤 '}${esc(a.author_name||a.author_email?.split('@')[0]||'匿名')} · ${new Date(a.created_at).toLocaleString('zh-CN')}</div>
+                    <div class="reply-author">${a.is_admin_answer?'[管理] ':''}${esc(a.author_name||a.author_email?.split('@')[0]||'匿名')} · ${new Date(a.created_at).toLocaleString('zh-CN')}</div>
                     <div class="reply-content">${esc(a.content)}</div>
                 </div>
             `).join('')||'<div style="color:var(--dim);font-size:0.85rem;padding:4px 0">暂无回答</div>'}
@@ -346,7 +346,7 @@
             <div class="section-title">💬 评论 (${comments.length})</div>
             ${comments.map(c=>`
                 <div class="reply-box">
-                    <div class="reply-author">👤 ${esc(c.author_name||c.author_email?.split('@')[0]||'匿名')} · ${new Date(c.created_at).toLocaleString('zh-CN')}</div>
+                    <div class="reply-author">${esc(c.author_name||c.author_email?.split('@')[0]||'匿名')} · ${new Date(c.created_at).toLocaleString('zh-CN')}</div>
                     <div class="reply-content">${esc(c.content)}</div>
                 </div>
             `).join('')||'<div style="color:var(--dim);font-size:0.85rem;padding:4px 0">暂无评论</div>'}
