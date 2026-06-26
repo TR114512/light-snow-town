@@ -1,5 +1,8 @@
 {
   "name": "lighttown-api",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "nodemailer": "6.9.7"
+  }
 }

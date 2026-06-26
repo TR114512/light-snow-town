@@ -271,7 +271,7 @@
 </div>
 
 <!-- 开发者模态框 -->
-<div id="devModalOverlay" class="dev-modal-overlay"><div class="dev-modal"><div class="dev-modal-header"><h3>灯雪镇 · 开发人员</h3><button class="close-dev-modal" id="closeDevModalBtn">✕</button></div><div class="dev-list"><div class="dev-item"><span class="dev-role">开发者</span><span class="dev-name">Minecraft-云墨 &amp; fish</span></div><div class="dev-item"><span class="dev-role">设计师</span><span class="dev-name">Fish</span></div><div class="dev-item"><span class="dev-role">结构规划</span><span class="dev-name">TPS QMIT &amp; fish</span></div><div class="dev-item"><span class="dev-role">屎上镶金</span><span class="dev-name">🍊 我已急哭 &amp; fish</span></div><div class="dev-item"><span class="dev-role">特别鸣谢</span><span class="dev-name">Xiao_Zhinecr &amp; fish</span></div></div><div class="dev-note">感谢每一位建设灯雪镇的朋友</div></div></div>
+<div id="devModalOverlay" class="dev-modal-overlay"><div class="dev-modal"><div class="dev-modal-header"><h3>灯雪镇 · 开发人员</h3><button class="close-dev-modal" id="closeDevModalBtn">✕</button></div><div class="dev-list"><div class="dev-item"><span class="dev-role">主开发者</span><span class="dev-name">Minecraft -云墨-前端开发</span></div><div class="dev-item"><span class="dev-role">副开发者</span><span class="dev-name">Fish-后端开发</span></div><div class="dev-item"><span class="dev-role">项目总监</span><span class="dev-name">^_-</span></div><div class="dev-item"><span class="dev-role">设计师</span><span class="dev-name">Fish</span></div><div class="dev-item"><span class="dev-role">结构规划</span><span class="dev-name">TPS QMIT</span></div><div class="dev-item"><span class="dev-role">屎上镶金</span><span class="dev-name">🍊我已急哭</span></div><div class="dev-item"><span class="dev-role">特别鸣谢</span><span class="dev-name">Xiao_Zhinecr</span></div></div><div class="dev-note">感谢每一位建设灯雪镇的朋友</div></div></div>
 
 <!-- 隐私政策模态框 -->
 <div class="login-overlay" id="privacyOverlay">
@@ -496,7 +496,21 @@
         const animStyle = document.createElement('style');
         document.head.appendChild(animStyle);
         function updateAnimSpeed(val){
-            animStyle.textContent = `.entrance-animation{animation-duration:${val}s!important}`;
+            const s = parseFloat(val);
+            animStyle.textContent = `
+                .entrance-animation{animation-duration:${s}s!important}
+                .login-overlay{transition:opacity ${(s*0.33).toFixed(2)}s ease, visibility 0s ${(s*0.33).toFixed(2)}s!important}
+                .login-overlay.open{transition:opacity ${(s*0.33).toFixed(2)}s ease, visibility 0s 0s!important}
+                .login-modal{transition:transform ${(s*0.39).toFixed(2)}s cubic-bezier(0.2,0.9,0.4,1.1), opacity ${(s*0.28).toFixed(2)}s ease!important}
+                .dev-modal-overlay{transition:opacity ${(s*0.28).toFixed(2)}s, visibility 0s ${(s*0.28).toFixed(2)}s!important}
+                .dev-modal-overlay.open{transition:opacity ${(s*0.33).toFixed(2)}s ease, visibility 0s 0s!important}
+                .dev-modal{transition:transform ${(s*0.44).toFixed(2)}s cubic-bezier(0.2,0.9,0.4,1.1), opacity ${(s*0.33).toFixed(2)}s ease!important}
+                .settings-drawer{transition:right ${(s*0.33).toFixed(2)}s cubic-bezier(0.2,0.9,0.4,1.1)!important}
+                .drawer-overlay{transition:opacity ${(s*0.28).toFixed(2)}s, visibility 0s ${(s*0.28).toFixed(2)}s!important}
+                .drawer-overlay.open{transition:opacity ${(s*0.28).toFixed(2)}s, visibility 0s 0s!important}
+                .info-panel{animation-duration:${(s*0.67).toFixed(2)}s!important}
+                .rule-card{animation-duration:${(s*0.67).toFixed(2)}s!important}
+            `;
             animSpeedVal.textContent = val + 's';
             localStorage.setItem('ui_animSpeed', val);
         }
@@ -710,6 +724,7 @@
                 document.getElementById('regBtnModal').textContent = '注 册';
                 document.getElementById('regBtnModal').style.opacity = '1';
                 document.getElementById('regCodeGroupModal').style.display = 'none';
+                document.getElementById('regTsModal').value = String(Date.now());
             }
         }
 
@@ -823,8 +838,7 @@
                 const qq = document.getElementById('regQQModal').value.trim();
                 const gameId = document.getElementById('regGameIdModal').value.trim();
                 const website = document.querySelector('input[name="_website"]')?.value || '';
-                const ts = String(Date.now());
-                document.getElementById('regTsModal').value = ts;
+                const ts = document.getElementById('regTsModal').value;
                 const data = await apiCall('register', { email, password: pwd, qq, game_id: gameId, _website: website, _ts: ts });
                 // 暂存密码用于验证后自动登录
                 document.getElementById('regPasswordModal').setAttribute('data-pwd', pwd);

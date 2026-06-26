@@ -711,7 +711,12 @@
                     headers: headers,
                     body: JSON.stringify(data)
                 });
-                const json = await res.json();
+                const text = await res.text();
+                let json;
+                try { json = JSON.parse(text); } catch (_) {
+                    console.error('非JSON响应:', text.substring(0, 200));
+                    throw new Error('服务器返回异常(' + res.status + ')，请稍后重试');
+                }
                 if (!res.ok) throw new Error(json.message || '请求失败');
                 return json;
             }
@@ -734,6 +739,7 @@
                     refreshCaptcha(name === 'login' ? 'login' : (name === 'register' ? 'reg' : 'forgot'));
                 }
                 if (name === 'profile') loadProfile();
+                if (name === 'register') $('regTs').value = String(Date.now());
             }
 
             // ============================================================
@@ -844,8 +850,7 @@
 
                 try {
                     const website = document.querySelector('input[name="_website"]')?.value || '';
-                    const ts = String(Date.now());
-                    $('regTs').value = ts;
+                    const ts = $('regTs').value;
                     const data = await apiCall('register', { email, password: pwd, _website: website, _ts: ts });
                     showToast(data.message || '注册成功，请查收确认邮件', 'success');
                     showView('login');
