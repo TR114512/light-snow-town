@@ -672,30 +672,37 @@
             }
 
             // 图形验证码
-            function generateCaptcha(len) {
-                len = len || 5;
-                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                let result = '';
-                for (let i = 0; i < len; i++) {
-                    result += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-                return result;
-            }
-
             let captchaStore = {};
 
-            function refreshCaptcha(prefix) {
+            async function refreshCaptcha(prefix) {
                 const box = $(prefix + 'CaptchaBox');
                 if (!box) return;
-                const code = generateCaptcha(5);
-                box.textContent = code;
-                captchaStore[prefix] = code;
+                box.textContent = '...';
+                box.classList.add('refreshing');
+                try {
+                    const res = await fetch(`${API_BASE}/captcha/generate`, { method: 'POST' });
+                    const data = await res.json();
+                    captchaStore[prefix] = { id: data.id, code: data.code };
+                    box.textContent = data.code;
+                } catch (e) {
+                    box.textContent = '加载失败';
+                }
                 box.classList.remove('refreshing');
             }
 
-            function verifyCaptcha(prefix, input) {
-                const stored = captchaStore[prefix] || '';
-                return input.toUpperCase() === stored.toUpperCase();
+            async function verifyCaptcha(prefix, input) {
+                const stored = captchaStore[prefix];
+                if (!stored || !stored.id) return false;
+                try {
+                    const res = await fetch(`${API_BASE}/captcha/verify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: stored.id, code: String(input).toUpperCase() })
+                    });
+                    if (!res.ok) return false;
+                    delete captchaStore[prefix];
+                    return true;
+                } catch (_) { return false; }
             }
 
             function isPasswordStrong(pwd) {
@@ -842,7 +849,7 @@
                     showToast('两次密码输入不一致', 'error');
                     return;
                 }
-                if (!verifyCaptcha('reg', captcha)) {
+                if (!(await verifyCaptcha('reg', captcha))) {
                     showToast('验证码错误，请重新输入', 'error');
                     refreshCaptcha('reg');
                     return;
@@ -875,7 +882,7 @@
                     showToast('请填写完整信息', 'error');
                     return;
                 }
-                if (!verifyCaptcha('login', captcha)) {
+                if (!(await verifyCaptcha('login', captcha))) {
                     showToast('验证码错误，请重新输入', 'error');
                     refreshCaptcha('login');
                     return;
@@ -910,7 +917,7 @@
                     showToast('请输入有效的邮箱地址', 'error');
                     return;
                 }
-                if (!verifyCaptcha('forgot', captcha)) {
+                if (!(await verifyCaptcha('forgot', captcha))) {
                     showToast('验证码错误，请重新输入', 'error');
                     refreshCaptcha('forgot');
                     return;
@@ -1069,7 +1076,7 @@
                 }
             });
 
-            console.log('灯雪镇 · 前后端分离账号系统已加载，后端 API:', API_BASE);
+            
         })();
     </script>
 

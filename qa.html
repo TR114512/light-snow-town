@@ -71,7 +71,7 @@
 <body>
 <div class="container">
     <header>
-        <h1>💬 灯雪镇 · 问答中心</h1>
+        <h1>灯雪镇 · 问答中心</h1>
         <div class="nav">
             <span id="userInfo" style="color:var(--dim);font-size:0.8rem"></span>
             <button class="btn" id="loginBtn">登录</button>
@@ -328,7 +328,7 @@
             <div class="detail-body">${esc(q.content)}</div>
 
             <!-- 回答区 -->
-            <div class="section-title">📝 回答 (${answers.length})</div>
+            <div class="section-title">回答 (${answers.length})</div>
             ${answers.map((a,i)=>`
                 <div class="reply-box ${a.is_admin_answer?'admin':''}">
                     <div class="reply-author">${a.is_admin_answer?'[管理] ':''}${esc(a.author_name||a.author_email?.split('@')[0]||'匿名')} · ${new Date(a.created_at).toLocaleString('zh-CN')}</div>
@@ -343,7 +343,7 @@
             </div>`:''}
 
             <!-- 评论区 -->
-            <div class="section-title">💬 评论 (${comments.length})</div>
+            <div class="section-title">评论 (${comments.length})</div>
             ${comments.map(c=>`
                 <div class="reply-box">
                     <div class="reply-author">${esc(c.author_name||c.author_email?.split('@')[0]||'匿名')} · ${new Date(c.created_at).toLocaleString('zh-CN')}</div>

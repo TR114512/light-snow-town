@@ -1,22 +1,12 @@
-# Cloudflare Workers 配置
+# Cloudflare Workers 配置（已废弃，项目已迁移至 Supabase Edge Functions）
 name = "light-snow-town"
 main = "worker.js"
 compatibility_date = "2025-01-01"
-compatibility_flags = ["nodejs_compat"]
 
+# 敏感变量请在 Cloudflare Dashboard 中设置，不要在此文件填写实际值
 [vars]
 SUPABASE_URL = ""
 SUPABASE_SERVICE_ROLE_KEY = ""
 JWT_SECRET = ""
 EMAIL_FROM = ""
 ADMIN_EMAILS = ""
-
-[observability]
-enabled = true
-
-[observability.logs]
-enabled = true
-head_sampling_rate = 1
-persist = true
-invocation_logs = true
-
