@@ -214,32 +214,21 @@
         .captcha-box {
             flex-shrink: 0;
             background: var(--input-bg);
-            border-radius: 40px;
-            padding: 6px 16px;
-            font-size: 1.3rem;
-            font-weight: 700;
-            letter-spacing: 4px;
-            font-family: 'Courier New', monospace;
+            border-radius: 10px;
             cursor: pointer;
             user-select: none;
             border: 1px solid var(--glass-border);
-            min-width: 100px;
-            text-align: center;
-            color: var(--accent-blue);
-            transition: 0.2s;
-            height: 44px;
+            min-width: 140px;
+            height: 52px;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+            transition: border-color 0.2s, opacity 0.2s;
         }
-        .captcha-box:hover {
-            border-color: var(--accent-blue);
-            transform: scale(1.02);
-        }
-        .captcha-box.refreshing {
-            opacity: 0.5;
-            pointer-events: none;
-        }
+        .captcha-box svg { display:block; width:100%; height:100%; }
+        .captcha-box:hover { border-color: var(--accent-blue); }
+        .captcha-box.refreshing { opacity: 0.5; pointer-events: none; }
         .code-row {
             display: flex;
             gap: 10px;
@@ -515,7 +504,7 @@
                         <label>真人验证</label>
                         <div class="captcha-row">
                             <input type="text" class="form-control" id="loginCaptcha" placeholder="输入验证码" maxlength="6" required>
-                            <div class="captcha-box" id="loginCaptchaBox" title="点击刷新">A7K2</div>
+                            <div class="captcha-box" id="loginCaptchaBox" title="点击刷新"></div>
                         </div>
                     </div>
                     <button type="submit" class="btn-primary" id="loginBtn">登 录</button>
@@ -552,7 +541,7 @@
                         <label>真人验证</label>
                         <div class="captcha-row">
                             <input type="text" class="form-control" id="regCaptcha" placeholder="输入验证码" maxlength="6" required>
-                            <div class="captcha-box" id="regCaptchaBox" title="点击刷新">X9F3</div>
+                            <div class="captcha-box" id="regCaptchaBox" title="点击刷新"></div>
                         </div>
                     </div>
                     <!-- 蜜罐：机器人会填，人类看不到 -->
@@ -595,7 +584,7 @@
                         <label>真人验证</label>
                         <div class="captcha-row">
                             <input type="text" class="form-control" id="forgotCaptcha" placeholder="输入验证码" maxlength="6" required>
-                            <div class="captcha-box" id="forgotCaptchaBox" title="点击刷新">M4N8</div>
+                            <div class="captcha-box" id="forgotCaptchaBox" title="点击刷新"></div>
                         </div>
                     </div>
                     <button type="submit" class="btn-primary" id="forgotBtn">发送重置邮件</button>
@@ -674,18 +663,24 @@
             // 图形验证码
             let captchaStore = {};
 
+            // 点击验证码刷新
+            ['login','reg','forgot'].forEach(p => {
+                const box = $(p + 'CaptchaBox');
+                if (box) box.addEventListener('click', () => refreshCaptcha(p));
+            });
+
             async function refreshCaptcha(prefix) {
                 const box = $(prefix + 'CaptchaBox');
                 if (!box) return;
-                box.textContent = '...';
+                box.innerHTML = '<span style="opacity:0.4">加载...</span>';
                 box.classList.add('refreshing');
                 try {
                     const res = await fetch(`${API_BASE}/captcha/generate`, { method: 'POST' });
                     const data = await res.json();
                     captchaStore[prefix] = { id: data.id, code: data.code };
-                    box.textContent = data.code;
+                    box.innerHTML = data.svg;
                 } catch (e) {
-                    box.textContent = '加载失败';
+                    box.innerHTML = '<span style="color:#ef4444">加载失败</span>';
                 }
                 box.classList.remove('refreshing');
             }

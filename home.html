@@ -70,6 +70,12 @@
         .login-modal .form-hint { font-size:0.75rem; color:var(--text-dim); margin-top:4px; padding-left:14px; opacity:0.8; }
         .login-modal .form-hint.error { color:#f56c6c; }
         .login-modal .form-hint.success { color:#67c23a; }
+        .captcha-row { display:flex; gap:10px; align-items:center; margin-bottom:16px; }
+        .captcha-row .form-control { flex:1; }
+        .captcha-box { flex-shrink:0; min-width:140px; height:52px; border-radius:10px; border:1px solid var(--glass-border); background:var(--input-bg); cursor:pointer; user-select:none; overflow:hidden; display:flex; align-items:center; justify-content:center; transition:border-color 0.2s; }
+        .captcha-box svg { display:block; width:100%; height:100%; }
+        .captcha-box:hover { border-color:var(--accent-blue); }
+        .captcha-box.refreshing { opacity:0.5; pointer-events:none; }
 
         /* 个人中心样式 */
         .login-modal .user-profile { text-align:center; padding:8px 0; }
@@ -339,6 +345,10 @@
                     <label>密码</label>
                     <input type="password" class="form-control" id="loginPasswordModal" placeholder="请输入密码" required>
                 </div>
+                <div class="captcha-row">
+                    <input type="text" class="form-control" id="loginCaptchaModal" placeholder="验证码" maxlength="4" autocomplete="off">
+                    <div class="captcha-box" id="loginCaptchaBoxModal" title="点击刷新"></div>
+                </div>
                 <button type="submit" class="btn-primary" id="loginBtnModal">登 录</button>
             </form>
             <div class="auth-footer-links">
@@ -378,6 +388,10 @@
                     <input type="text" name="_website" tabindex="-1" autocomplete="off">
                 </div>
                 <input type="hidden" id="regTsModal" name="_ts">
+                <div class="captcha-row">
+                    <input type="text" class="form-control" id="regCaptchaModal" placeholder="验证码" maxlength="4" autocomplete="off">
+                    <div class="captcha-box" id="regCaptchaBoxModal" title="点击刷新"></div>
+                </div>
                 <div class="form-group" id="regCodeGroupModal" style="display:none;">
                     <label>📧 验证码（注册成功后显示在下方）</label>
                     <div class="code-row">
@@ -713,9 +727,41 @@
 
 
         // ============================================================
-        //  登录系统（无图形验证码）
+        //  登录系统
         // ============================================================
         const API_BASE = 'https://yfotnbwnhulvdjxstens.supabase.co/functions/v1/super-api';
+
+        let captchaStoreModal = {};
+        async function refreshCaptchaModal(prefix) {
+            const box = document.getElementById(prefix + 'CaptchaBoxModal');
+            if (!box) return;
+            box.innerHTML = '<span style="opacity:0.4;font-size:0.8rem">加载...</span>';
+            box.classList.add('refreshing');
+            try {
+                const res = await fetch(`${API_BASE}/captcha/generate`, { method: 'POST' });
+                const data = await res.json();
+                captchaStoreModal[prefix] = { id: data.id, code: data.code };
+                box.innerHTML = data.svg;
+            } catch (e) { box.innerHTML = '<span style="color:#ef4444;font-size:0.75rem">加载失败</span>'; }
+            box.classList.remove('refreshing');
+        }
+        async function verifyCaptchaModal(prefix, input) {
+            const stored = captchaStoreModal[prefix];
+            if (!stored || !stored.id) return false;
+            try {
+                const res = await fetch(`${API_BASE}/captcha/verify`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: stored.id, code: String(input).toUpperCase() })
+                });
+                if (!res.ok) return false;
+                delete captchaStoreModal[prefix];
+                return true;
+            } catch (_) { return false; }
+        }
+        ['login','reg'].forEach(p => {
+            const box = document.getElementById(p + 'CaptchaBoxModal');
+            if (box) box.addEventListener('click', () => refreshCaptchaModal(p));
+        });
 
         const loginOverlay = document.getElementById('loginOverlay');
         const authToggleBtn = document.getElementById('authToggleBtn');
@@ -733,13 +779,14 @@
             forgotView.style.display = viewName === 'forgot' ? 'block' : 'none';
             profileView.style.display = viewName === 'profile' ? 'block' : 'none';
             if (viewName === 'profile') loadProfileModal();
-            // 切回注册页时恢复注册按钮
+            if (viewName === 'login') refreshCaptchaModal('login');
             if (viewName === 'register') {
                 document.getElementById('regBtnModal').disabled = false;
                 document.getElementById('regBtnModal').textContent = '注 册';
                 document.getElementById('regBtnModal').style.opacity = '1';
                 document.getElementById('regCodeGroupModal').style.display = 'none';
                 document.getElementById('regTsModal').value = String(Date.now());
+                refreshCaptchaModal('reg');
             }
         }
 
@@ -814,8 +861,12 @@
             e.preventDefault();
             const email = document.getElementById('loginEmailModal').value.trim();
             const password = document.getElementById('loginPasswordModal').value;
+            const captcha = document.getElementById('loginCaptchaModal').value.trim();
 
             try {
+                if (!(await verifyCaptchaModal('login', captcha))) {
+                    showToast('验证码错误', 'error'); refreshCaptchaModal('login'); return;
+                }
                 const data = await apiCall('login', { email, password });
                 localStorage.setItem('lt_token', data.token);
                 localStorage.setItem('lt_user', JSON.stringify(data.user));
@@ -835,6 +886,7 @@
             const email = document.getElementById('regEmailModal').value.trim();
             const pwd = document.getElementById('regPasswordModal').value;
             const pwdConfirm = document.getElementById('regPasswordConfirmModal').value;
+            const captcha = document.getElementById('regCaptchaModal').value.trim();
 
             if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 showToast('请输入有效的邮箱地址', 'error');
@@ -847,6 +899,9 @@
             if (pwd !== pwdConfirm) {
                 showToast('两次密码输入不一致', 'error');
                 return;
+            }
+            if (!(await verifyCaptchaModal('reg', captcha))) {
+                showToast('验证码错误', 'error'); refreshCaptchaModal('reg'); return;
             }
 
             try {

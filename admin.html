@@ -379,9 +379,12 @@
         }catch(e){ toast(e.message,'err'); }
     };
 
-    // ---- 事件绑定 ----
+    // ---- 事件绑定（搜索带防抖） ----
+    let searchTimer;
     document.getElementById('searchInput').addEventListener('input',function(){
-        loadUsers(this.value.trim());
+        clearTimeout(searchTimer);
+        const q = this.value.trim();
+        searchTimer = setTimeout(() => loadUsers(q), 300);
     });
     document.getElementById('toggleUnverified').addEventListener('click',function(){
         showAll = !showAll;
