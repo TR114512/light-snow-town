@@ -551,7 +551,7 @@
                     <input type="hidden" id="regTs" name="_ts">
                     <button type="submit" class="btn-primary" id="regBtn">注 册</button>
                     <div class="form-hint" style="text-align:center; margin-top:8px;">注册后请查收邮箱验证，未验证账号将被自动清除</div>
-                    <div class="form-hint" style="color:#f5b042;text-align:center;">⚠️ 请在5分钟内完成验证</div>
+                    <div class="form-hint" style="color:#f5b042;text-align:center;">请在5分钟内完成验证</div>
                 </form>
                 <div class="auth-footer-links">
                     已有账号？ <a id="registerToLogin">去登录</a>
@@ -1020,7 +1020,7 @@
             // ============================================================
             $('profileRefreshBtn').addEventListener('click', function() {
                 loadProfile();
-                showToast('状态已刷新 ✓', 'success');
+                showToast('状态已刷新', 'success');
             });
 
             // ============================================================
@@ -1060,10 +1060,10 @@
                     return;
                 }
                 if (val.length < 8) {
-                    hint.textContent = '⚠️ 至少8位';
+                    hint.textContent = '至少8位';
                     hint.className = 'form-hint error';
                 } else if (!/[a-zA-Z]/.test(val) || !/\d/.test(val)) {
-                    hint.textContent = '⚠️ 需包含字母和数字';
+                    hint.textContent = '需包含字母和数字';
                     hint.className = 'form-hint error';
                 } else {
                     hint.textContent = '密码强度合格';

@@ -211,9 +211,36 @@
         ::-webkit-scrollbar { width:5px; }
         ::-webkit-scrollbar-track { background:#0a1f2e; }
         ::-webkit-scrollbar-thumb { background:#3b82f6; border-radius:10px; }
+
+        /* 预览模式全屏覆盖 */
+        #promoOverlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:20000; background:#060b14; display:none; }
+        #promoOverlay.open { display:block; }
+        #promoOverlay iframe { width:100%; height:100%; border:none; }
+        #promoSkipBtn { position:fixed; top:16px; right:16px; z-index:20001; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:8px 20px; font-size:0.85rem; cursor:pointer; backdrop-filter:blur(8px); transition:0.2s; display:none; }
+        #promoSkipBtn:hover { background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.4); }
+        #promoOverlay.open ~ #promoSkipBtn { display:block; }
+
+        /* Android 风格模态窗动画 */
+        .modal-shrink-target { position:fixed; bottom:24px; right:24px; z-index:19998; width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#5b8def,#12b7f5); border:none; color:#fff; font-size:1rem; cursor:pointer; box-shadow:0 4px 20px rgba(91,141,239,0.4); display:none; align-items:center; justify-content:center; transition:transform 0.3s, box-shadow 0.3s; }
+        .modal-shrink-target:hover { transform:scale(1.1); box-shadow:0 6px 28px rgba(91,141,239,0.6); }
+        .modal-shrink-target.show { display:flex; animation:popIn 0.4s cubic-bezier(0.2,0.9,0.4,1.1); }
+        @keyframes popIn { 0%{ transform:scale(0); } 100%{ transform:scale(1); } }
+
+        /* 隐私全屏覆盖 */
+        .privacy-fullscreen { position:fixed; top:0; left:0; width:100%; height:100%; z-index:19999; background:var(--bg-color); display:flex; align-items:center; justify-content:center; opacity:0; visibility:hidden; transition:opacity 0.5s ease, visibility 0s 0.5s; }
+        .privacy-fullscreen.open { opacity:1; visibility:visible; transition:opacity 0.5s ease, visibility 0s 0s; }
+        .privacy-fullscreen .privacy-container { max-width:680px; width:90%; max-height:85vh; overflow-y:auto; padding:2rem; text-align:left; line-height:1.8; font-size:0.9rem; }
+        .privacy-fullscreen .privacy-container h2 { font-size:1.6rem; font-weight:800; margin-bottom:0.5rem; text-align:center; }
+        .privacy-fullscreen .privacy-container .privacy-scroll { max-height:50vh; overflow-y:auto; padding-right:8px; margin:1rem 0; }
+        .privacy-fullscreen .privacy-container strong { color:var(--accent-gold); }
+        .privacy-fullscreen .privacy-container p { color:var(--text-main); margin-bottom:10px; }
     </style>
 </head>
 <body>
+
+<!-- 预览模式全屏 -->
+<div id="promoOverlay"><iframe id="promoFrame" src="lightsnowtown-promo.html" allow="autoplay"></iframe></div>
+<button id="promoSkipBtn" onclick="closePromo()">跳过预览</button>
 
 <!-- 背景音乐 -->
 <audio id="bgMusic" loop preload="auto" src="https://meting.mikus.ink/api?server=tencent&type=url&id=002WOKWG4WEt9X"></audio>
@@ -239,7 +266,7 @@
                 <span id="authBtnText">🔑 登录</span>
             </div>
             <div class="dev-btn" id="devBtn" aria-label="开发者信息" role="button" tabindex="0"><span class="dev-icon"></span> <span>开发者</span></div>
-            <a href="qa.html" style="text-decoration:none;"><div class="dev-btn" style="background:rgba(245,176,66,0.15);border-color:rgba(245,176,66,0.4);"><span>💬 问答</span></div></a>
+            <a href="qa.html" style="text-decoration:none;"><div class="dev-btn" style="background:rgba(245,176,66,0.15);border-color:rgba(245,176,66,0.4);"><span>问答</span></div></a>
             <div class="settings-icon-btn" id="settingsBtn" aria-label="打开设置面板" role="button" tabindex="0"><i class="custom-gear" aria-hidden="true"></i> <span>设置</span></div>
         </div>
     </div>
@@ -258,7 +285,7 @@
     </div>
 
     <div class="info-grid">
-        <div class="info-panel"><div class="panel-title">服务器档案</div><div class="detail-item"><span class="detail-label">游戏版本</span><span>1.21.11 (1.17-最新版 均可进入)</span></div><div class="detail-item"><span class="detail-label">核心/互通</span><span>Paper核心 / Java基岩互通</span></div><div class="detail-item"><span class="detail-label">社群总成员</span><span>✦ 140人 ✦</span></div><div class="detail-item"><span class="detail-label">插件数量</span><span>50+ 功能拓展</span></div><div class="detail-item"><span class="detail-label">服务器类型</span><span>SMP 纯净生存</span></div><div class="detail-item"><span class="detail-label">作者</span><span>Minecraft-云墨</span></div></div>
+        <div class="info-panel"><div class="panel-title">服务器档案</div><div class="detail-item"><span class="detail-label">游戏版本</span><span>1.21.11 (1.17-最新版 均可进入)</span></div><div class="detail-item"><span class="detail-label">核心/互通</span><span>Paper核心 / Java基岩互通</span></div><div class="detail-item"><span class="detail-label">社群总成员</span><span>140人</span></div><div class="detail-item"><span class="detail-label">插件数量</span><span>50+ 功能拓展</span></div><div class="detail-item"><span class="detail-label">服务器类型</span><span>SMP 纯净生存</span></div><div class="detail-item"><span class="detail-label">作者</span><span>Minecraft-云墨</span></div></div>
         <div class="info-panel"><div class="panel-title">社群 & 问卷</div><div class="detail-item"><span class="detail-label">2群</span><span class="qq-group">1077558524</span><button class="copy-btn" data-clip="1077558524">复制</button></div><div class="detail-item"><span class="detail-label">大群</span><span class="qq-group">1007865515</span><button class="copy-btn" data-clip="1007865515">复制</button></div><div class="detail-item"><span class="detail-label">公众号ID</span><span>gh_6ce35a3679bd</span><button class="copy-btn" data-clip="gh_6ce35a3679bd">复制ID</button></div><div class="detail-item"><span class="detail-label">公众号名称</span><span>Minecraft 灯雪镇</span></div><div class="detail-item"><span class="detail-label">灯雪镇审核问卷</span><a class="link-btn" href="https://docs.qq.com/form/page/DVkVuVW9Ga0tQeXJD" target="_blank">点击填写</a></div><div class="detail-item"><span class="detail-label">技术人员申请问卷</span><a class="link-btn" href="https://docs.qq.com/form/page/DVnVjYXZ3TUVBVmNH" target="_blank">点击填写</a></div><div class="detail-item"><span class="detail-label">爱发电</span><a class="link-btn" href="https://www.ifdian.net/a/Yukstarlight" target="_blank">支持灯雪镇</a></div><div class="detail-item"><span class="detail-label">Modrinth 主页</span><a class="link-btn" href="https://modrinth.com/user/bOW8AP7l" target="_blank">查看主页</a></div><div class="detail-item"><span class="detail-label">MCBBS 主页</span><a class="link-btn" href="https://www.minebbs.com/members/yukstarlight.254709/" target="_blank">查看主页</a></div><div class="detail-item"><span class="detail-label">Github 主页</span><a class="link-btn" href="https://github.com/TR114512" target="_blank">查看主页</a></div></div>
         <div class="info-panel"><div class="panel-title">玩法与保障</div><div class="detail-item"><span class="detail-label">完整插件体系</span><span>趣味拓展/称号/市场</span></div><div class="detail-item"><span class="detail-label">高级防熊</span><span>领地保护+核心日志+回滚机制</span></div><div class="detail-item"><span class="detail-label">多样经济系统</span><span>玩家拍卖行/职业/商店交易</span></div><div class="detail-item"><span class="detail-label">纯净体验</span><span>原版友好，社区温暖，无正版验证</span></div></div>
     </div>
@@ -290,37 +317,41 @@
         <div class="setting-group"><label>动态小球颜色</label><input type="color" id="ballColor" value="#7bc5ff"></div>
         <div class="setting-group"><label>小球滚动速度</label><input type="range" id="ballSpeed" min="0.5" max="2.2" step="0.05" value="1.0"></div>
         <div class="setting-group"><label>背景模糊强度</label><input type="range" id="backdropBlur" min="4" max="20" step="1" value="12"></div>
-        <hr><button id="resetSettingsBtn" class="reset-default">重置默认</button>
+        <hr><button id="replayPromoBtn" class="reset-default" style="background:rgba(91,141,239,0.3);color:var(--text-main);margin-bottom:8px">重新观看预览</button>
+        <button id="resetSettingsBtn" class="reset-default">重置默认</button>
         <p style="font-size:11px; margin-top:16px; text-align:center;">动态交互 | 实时响应</p>
     </div>
 </div>
 
 <!-- 开发者模态框 -->
-<div id="devModalOverlay" class="dev-modal-overlay"><div class="dev-modal"><div class="dev-modal-header"><h3>灯雪镇 · 开发人员</h3><button class="close-dev-modal" id="closeDevModalBtn">✕</button></div><div class="dev-list"><div class="dev-item"><span class="dev-role">主开发者</span><span class="dev-name">Minecraft -云墨-前端开发</span></div><div class="dev-item"><span class="dev-role">副开发者</span><span class="dev-name">Fish-后端开发</span></div><div class="dev-item"><span class="dev-role">项目总监</span><span class="dev-name">imJack</span></div><div class="dev-item"><span class="dev-role">设计师</span><span class="dev-name">Fish</span></div><div class="dev-item"><span class="dev-role">结构规划</span><span class="dev-name">TPS QMIT</span></div><div class="dev-item"><span class="dev-role">屎上镶金</span><span class="dev-name">🍊我已急哭</span></div><div class="dev-item"><span class="dev-role">特别鸣谢</span><span class="dev-name">Xiao_Zhinecr</span></div></div><div class="dev-note">感谢每一位建设灯雪镇的朋友</div></div></div>
+<div id="devModalOverlay" class="dev-modal-overlay"><div class="dev-modal"><div class="dev-modal-header"><h3>灯雪镇 · 开发人员</h3><button class="close-dev-modal" id="closeDevModalBtn">✕</button></div><div class="dev-list"><div class="dev-item"><span class="dev-role">主开发者</span><span class="dev-name">Minecraft -云墨-前端开发</span></div><div class="dev-item"><span class="dev-role">副开发者</span><span class="dev-name">Fish-后端开发</span></div><div class="dev-item"><span class="dev-role">项目总监</span><span class="dev-name">imJack</span></div><div class="dev-item"><span class="dev-role">设计师</span><span class="dev-name">Fish</span></div><div class="dev-item"><span class="dev-role">结构规划</span><span class="dev-name">TPS QMIT</span></div><div class="dev-item"><span class="dev-role">屎上镶金</span><span class="dev-name">我已急哭</span></div><div class="dev-item"><span class="dev-role">特别鸣谢</span><span class="dev-name">Xiao_Zhinecr</span></div></div><div class="dev-note">感谢每一位建设灯雪镇的朋友</div></div></div>
 
-<!-- 隐私政策模态框 -->
-<div class="login-overlay" id="privacyOverlay">
-    <div class="login-modal" style="text-align:left;line-height:1.8">
-        <div class="modal-title" style="font-size:1.8rem;font-weight:800;color:var(--text-main);background:none;-webkit-text-fill-color:var(--text-main)">📜 隐私与条款</div>
-        <div class="modal-sub"><span>请仔细阅读以下内容</span></div>
-        <div style="font-size:0.85rem;color:var(--text-main);max-height:40vh;overflow-y:auto;padding-right:8px">
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">1. 信息收集</strong><br>我们仅收集您主动提供的电子邮箱、QQ号、游戏ID等信息，用于账号注册和社区服务。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">2. 信息使用</strong><br>您的邮箱仅用于账号验证、密码重置和重要通知。QQ号和游戏ID仅用于社区展示，不会用于商业推广。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">3. 信息保护</strong><br>您的密码经过 Supabase 加密存储，我们不会向任何第三方出售或分享您的个人信息。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">4. 第三方数据收集</strong><br>Supabase（数据库与认证）收集账号邮箱、加密密码、注册时间；MailChannels（邮件发送）仅传递发信所需的邮箱地址，不存储；GitHub Pages（静态托管）不收集任何个人信息。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">5. 第三方共享清单</strong><br>我们不会主动共享您的数据。法律要求或政府机关依法调取时除外。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">6. 开源协议</strong><br>本项目前端基于 MIT 协议开源（https://github.com/TR114512/light-snow-town）。使用以下开源技术：Supabase（Apache 2.0）、Deno（MIT）。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">7. Cookie 与本地存储</strong><br>我们使用本地存储（LocalStorage）保存登录状态、主题偏好和动画设置，不涉及跨站追踪，不用于广告或分析。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">8. 账号管理</strong><br>未验证邮箱的账号将在注册5分钟后自动清除。已验证账号可联系管理员删除，删除后数据不可恢复。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">9. 社区规范</strong><br>禁止发布违法、色情、暴力、人身攻击内容。违规内容将被删除并封禁账号。</p>
-            <p style="color:var(--text-main)"><strong style="color:var(--accent-gold)">10. 免责声明</strong><br>用户发言仅代表个人观点。我们保留更新本政策的权利，重大变更将弹窗通知。</p>
+<!-- 隐私政策全屏 -->
+<div class="privacy-fullscreen" id="privacyOverlay">
+    <canvas id="privacyAurora" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>
+    <canvas id="privacyStars" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>
+    <canvas id="privacySnow" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none"></canvas>
+    <div class="privacy-container" style="position:relative;z-index:10">
+        <h2>隐私与条款</h2>
+        <p style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-bottom:1rem">请仔细阅读以下内容</p>
+        <div class="privacy-scroll">
+            <p><strong>1. 信息收集</strong><br>我们仅收集您主动提供的电子邮箱、QQ号、游戏ID等信息，用于账号注册和社区服务。</p>
+            <p><strong>2. 信息使用</strong><br>您的邮箱仅用于账号验证、密码重置和重要通知。QQ号和游戏ID仅用于社区展示，不会用于商业推广。</p>
+            <p><strong>3. 信息保护</strong><br>您的密码经过 Supabase 加密存储，我们不会向任何第三方出售或分享您的个人信息。</p>
+            <p><strong>4. 第三方数据收集</strong><br>Supabase（数据库与认证）收集账号邮箱、加密密码、注册时间；MailChannels（邮件发送）仅传递发信所需的邮箱地址，不存储；GitHub Pages（静态托管）不收集任何个人信息。</p>
+            <p><strong>5. 第三方共享清单</strong><br>我们不会主动共享您的数据。法律要求或政府机关依法调取时除外。</p>
+            <p><strong>6. 开源协议</strong><br>本项目前端基于 MIT 协议开源（https://github.com/TR114512/light-snow-town）。使用以下开源技术：Supabase（Apache 2.0）、Deno（MIT）。</p>
+            <p><strong>7. Cookie 与本地存储</strong><br>我们使用本地存储（LocalStorage）保存登录状态、主题偏好和动画设置，不涉及跨站追踪，不用于广告或分析。</p>
+            <p><strong>8. 账号管理</strong><br>未验证邮箱的账号将在注册5分钟后自动清除。已验证账号可联系管理员删除，删除后数据不可恢复。</p>
+            <p><strong>9. 社区规范</strong><br>禁止发布违法、色情、暴力、人身攻击内容。违规内容将被删除并封禁账号。</p>
+            <p><strong>10. 免责声明</strong><br>用户发言仅代表个人观点。我们保留更新本政策的权利，重大变更将弹窗通知。</p>
         </div>
-        <div style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px">
-            <input type="checkbox" id="privacyAgree" style="width:16px;height:16px;accent-color:var(--accent-blue)">
-            <label for="privacyAgree" style="font-size:0.85rem;color:var(--text-main);cursor:pointer">我已阅读并同意以上全部条款</label>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">
+            <input type="checkbox" id="privacyAgree" style="width:18px;height:18px;accent-color:var(--accent-blue)">
+            <label for="privacyAgree" style="cursor:pointer">我已阅读并同意以上全部条款</label>
         </div>
-        <button class="btn-primary" id="privacyConfirmBtn" style="margin-top:12px;width:100%" disabled>✓ 同意并继续</button>
-        <button class="btn" id="privacyDenyBtn" style="margin-top:8px;width:100%;color:var(--text-dim);border-color:transparent;background:transparent">✕ 不同意，仅浏览</button>
+        <button class="btn-primary" id="privacyConfirmBtn" style="margin-top:12px;width:100%" disabled>同意并继续</button>
+        <button class="btn" id="privacyDenyBtn" style="margin-top:8px;width:100%;color:var(--text-dim);border-color:transparent;background:transparent">不同意，仅浏览</button>
     </div>
 </div>
 
@@ -351,7 +382,7 @@
                     <input type="password" class="form-control" id="loginPasswordModal" placeholder="请输入密码" required>
                 </div>
                 <div class="captcha-row">
-                    <input type="text" class="form-control" id="loginCaptchaModal" placeholder="验证码" maxlength="4" autocomplete="off">
+                    <input type="text" class="form-control" id="loginCaptchaModal" placeholder="验证码" maxlength="6" autocomplete="off">
                     <div class="captcha-box" id="loginCaptchaBoxModal" title="点击刷新"></div>
                 </div>
                 <button type="submit" class="btn-primary" id="loginBtnModal">登 录</button>
@@ -394,7 +425,7 @@
                 </div>
                 <input type="hidden" id="regTsModal" name="_ts">
                 <div class="captcha-row">
-                    <input type="text" class="form-control" id="regCaptchaModal" placeholder="验证码" maxlength="4" autocomplete="off">
+                    <input type="text" class="form-control" id="regCaptchaModal" placeholder="验证码" maxlength="6" autocomplete="off">
                     <div class="captcha-box" id="regCaptchaBoxModal" title="点击刷新"></div>
                 </div>
                 <div class="form-group" id="regCodeGroupModal" style="display:none;">
@@ -406,7 +437,7 @@
                     <div class="form-hint" id="regCodeHintModal" style="color:#f5b042;">注册成功后验证码会显示在这里</div>
                 </div>
                 <button type="submit" class="btn-primary" id="regBtnModal">注 册</button>
-                <div class="form-hint" style="color:#f5b042;text-align:center;margin-top:8px;">⚠️ 注册后请在5分钟内完成邮箱验证，未验证账号将被自动清除</div>
+                <div class="form-hint" style="color:#f5b042;text-align:center;margin-top:8px;">注册后请在5分钟内完成邮箱验证，未验证账号将被自动清除</div>
             </form>
             <div class="auth-footer-links">
                 已有账号？ <a id="switchToLogin">去登录</a>
@@ -485,6 +516,33 @@
     (function() {
         'use strict';
 
+        // ---- 预览模式 ----
+        const promoOverlay = document.getElementById('promoOverlay');
+        const promoFrame = document.getElementById('promoFrame');
+        const promoSkipBtn = document.getElementById('promoSkipBtn');
+
+        window.closePromo = function() {
+            promoOverlay.classList.remove('open');
+            promoSkipBtn.style.display = 'none';
+            localStorage.setItem('lt_promo_viewed', '1');
+            if (localStorage.getItem('lt_privacy_accepted') !== '1') {
+                const po = document.getElementById('privacyOverlay');
+                if (po) po.classList.add('open');
+            }
+        };
+
+        // 监听来自 iframe 的完成消息
+        window.addEventListener('message', function(e) {
+            if (e.data === 'promo-done') closePromo();
+        });
+
+        // 首次访问显示预览，之后跳过
+        if (localStorage.getItem('lt_promo_viewed') !== '1') {
+            promoOverlay.classList.add('open');
+        } else {
+            promoOverlay.style.display = 'none';
+        }
+
         // ---- 加载动画 ----
         const loadingScreen = document.getElementById('loadingScreen');
         const mainContent = document.getElementById('mainContent');
@@ -493,7 +551,7 @@
         if(!showLoading) document.body.classList.add('no-loading');
         const loadDuration = parseFloat(localStorage.getItem('ui_loadTime') || '1.2') * 1000;
         const animSpeed = parseFloat(localStorage.getItem('ui_animSpeed') || '0.9');
-        if(loadingScreen) {
+        if(loadingScreen && showLoading) {
             setTimeout(() => {
                 loadingScreen.classList.add('fade-out');
                 if(mainContent && showAnim) {
@@ -504,7 +562,8 @@
                 setTimeout(() => { loadingScreen.style.display = 'none'; }, 600);
             }, loadDuration);
         } else if(mainContent) {
-            mainContent.style.opacity = '1';
+            if(showAnim) mainContent.classList.add('entrance-animation');
+            else mainContent.style.opacity = '1';
         }
 
         // 加载画面时长滑块
@@ -646,6 +705,10 @@
         }
         bindSetting('bgColorPicker','ui_bgColor'); bindSetting('cardOpacity','ui_cardOpacity',true); bindSetting('accentColor','ui_accentColor'); bindSetting('ballColor','ui_ballColor'); bindSetting('ballSpeed','ui_ballSpeed',true); bindSetting('backdropBlur','ui_backdropBlur',true);
         document.getElementById('resetSettingsBtn').addEventListener('click', () => { localStorage.clear(); location.reload(); });
+        document.getElementById('replayPromoBtn').addEventListener('click', () => {
+            localStorage.removeItem('lt_promo_viewed');
+            location.reload();
+        });
 
         const themeDarkBtn = document.getElementById('themeDarkBtn');
         const themeLightBtn = document.getElementById('themeLightBtn');
@@ -826,21 +889,17 @@
             return json;
         }
 
+        function closeLoginModal() {
+            loginOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
         function openLoginModal() {
             loginOverlay.classList.add('open');
             document.body.style.overflow = 'hidden';
             const token = localStorage.getItem('lt_token');
-            if (token) {
-                showAuthView('profile');
-                loadProfileModal();
-            } else {
-                showAuthView('login');
-            }
-        }
-
-        function closeLoginModal() {
-            loginOverlay.classList.remove('open');
-            document.body.style.overflow = '';
+            if (token) { showAuthView('profile'); loadProfileModal(); }
+            else { showAuthView('login'); }
         }
 
         authToggleBtn.addEventListener('click', function(){
@@ -1101,7 +1160,7 @@
         // ---- 刷新状态 ----
         document.getElementById('profileRefreshModalBtn').addEventListener('click', function() {
             loadProfileModal();
-            showToast('状态已刷新 ✓', 'success');
+            showToast('状态已刷新', 'success');
         });
 
         // ---- 更新顶部按钮 ----
@@ -1127,10 +1186,10 @@
                 return;
             }
             if (val.length < 8) {
-                hint.textContent = '⚠️ 至少8位';
+                hint.textContent = '至少8位';
                 hint.className = 'form-hint error';
             } else if (!/[a-zA-Z]/.test(val) || !/\d/.test(val)) {
-                hint.textContent = '⚠️ 需包含字母和数字';
+                hint.textContent = '需包含字母和数字';
                 hint.className = 'form-hint error';
             } else {
                 hint.textContent = '强度合格';
@@ -1210,6 +1269,68 @@
     document.addEventListener('click', startOnInteraction);
     document.addEventListener('touchstart', startOnInteraction);
     document.addEventListener('keydown', startOnInteraction);
+
+    // ===== 隐私政策背景动画 =====
+    let privacyAnimsRunning = false;
+    function startPrivacyAnims() {
+        if (privacyAnimsRunning) return;
+        privacyAnimsRunning = true;
+        // Stars
+        (() => {
+            const c = document.getElementById('privacyStars'), ctx = c.getContext('2d');
+            let s = []; function rs() { c.width = innerWidth; c.height = innerHeight; } rs(); addEventListener('resize', rs);
+            for (let i = 0; i < 200; i++) s.push({ x: Math.random() * c.width, y: Math.random() * c.height, r: Math.random() * 1.5 + 0.3, tw: Math.random() * Math.PI * 2, sp: Math.random() * 0.004 + 0.002, ba: Math.random() * 0.5 + 0.2 });
+            function dr() {
+                if (!privacyAnimsRunning) return;
+                ctx.clearRect(0, 0, c.width, c.height);
+                for (const p of s) { p.tw += p.sp; const a = p.ba + Math.sin(p.tw) * 0.3; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fillStyle = `rgba(200,220,255,${Math.max(0.05, a)})`; ctx.fill(); }
+                requestAnimationFrame(dr);
+            } requestAnimationFrame(dr);
+        })();
+        // Snow
+        (() => {
+            const c = document.getElementById('privacySnow'), ctx = c.getContext('2d');
+            let f = []; function rs() { c.width = innerWidth; c.height = innerHeight; } rs(); addEventListener('resize', rs);
+            for (let i = 0; i < 120; i++) f.push({ x: Math.random() * (c.width || 1920), y: Math.random() * (c.height || 1080), r: Math.random() * 2.5 + 0.5, sy: Math.random() * 0.3 + 0.1, sx: Math.random() * 0.2 - 0.1, wb: Math.random() * Math.PI * 2, ws: Math.random() * 0.007 + 0.003, a: Math.random() * 0.4 + 0.1 });
+            function dr() {
+                if (!privacyAnimsRunning) return;
+                ctx.clearRect(0, 0, c.width, c.height);
+                for (const p of f) { p.y += p.sy; p.wb += p.ws; p.x += p.sx + Math.sin(p.wb) * 0.2; if (p.y > c.height + 10) { p.y = -10; p.x = Math.random() * c.width; } if (p.x > c.width + 10) p.x = -10; if (p.x < -10) p.x = c.width + 10; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fillStyle = `rgba(255,255,255,${p.a})`; ctx.fill(); }
+                requestAnimationFrame(dr);
+            } requestAnimationFrame(dr);
+        })();
+        // Aurora
+        (() => {
+            const c = document.getElementById('privacyAurora'), ctx = c.getContext('2d');
+            function rs() { c.width = innerWidth; c.height = innerHeight; } rs(); addEventListener('resize', rs);
+            function dr(t) {
+                if (!privacyAnimsRunning) return;
+                ctx.clearRect(0, 0, c.width, c.height);
+                const ms = t * 0.0003;
+                const g1 = ctx.createLinearGradient(0, 0, 0, c.height * 0.35);
+                g1.addColorStop(0, `rgba(20,40,80,${0.16 + Math.sin(ms) * 0.05})`);
+                g1.addColorStop(0.5, `rgba(15,30,60,${0.08 + Math.cos(ms * 0.7) * 0.04})`);
+                g1.addColorStop(1, 'rgba(6,11,20,0)');
+                ctx.fillStyle = g1; ctx.fillRect(0, 0, c.width, c.height * 0.35);
+                const g2 = ctx.createLinearGradient(0, c.height * 0.65, 0, c.height);
+                g2.addColorStop(0, 'rgba(6,11,20,0)');
+                g2.addColorStop(0.7, `rgba(15,10,8,${0.05 + Math.sin(ms * 1.3) * 0.03})`);
+                g2.addColorStop(1, `rgba(25,18,12,${0.07 + Math.cos(ms) * 0.03})`);
+                ctx.fillStyle = g2; ctx.fillRect(0, c.height * 0.65, c.width, c.height * 0.35);
+                requestAnimationFrame(dr);
+            } requestAnimationFrame(dr);
+        })();
+    }
+    function stopPrivacyAnims() { privacyAnimsRunning = false; }
+
+    // 监听隐私窗口开关
+    const privacyOverlayEl = document.getElementById('privacyOverlay');
+    if (privacyOverlayEl) {
+        new MutationObserver(() => {
+            if (privacyOverlayEl.classList.contains('open')) startPrivacyAnims();
+            else stopPrivacyAnims();
+        }).observe(privacyOverlayEl, { attributes: true, attributeFilter: ['class'] });
+    }
 
     // ===== 隐私政策 =====
     let privacyAccepted = localStorage.getItem('lt_privacy_accepted') === '1';

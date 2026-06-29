@@ -306,7 +306,7 @@
                     <td style="font-size:0.82rem;">${eQQ || '<span style="color:var(--dim);opacity:0.5;">-</span>'}</td>
                     <td style="font-size:0.82rem;">${eGameId || '<span style="color:var(--dim);opacity:0.5;">-</span>'}</td>
                     <td style="font-size:0.78rem;font-family:monospace;color:var(--dim)">${escHtml(u.ip || '') || '<span style="opacity:0.4;">未知</span>'}</td>
-                    <td>${u.email_confirmed?'<span class="badge verified">✓ 已验证</span>':'<span class="badge unverified">✗ 未验证</span>'}</td>
+                    <td>${u.email_confirmed?'<span class="badge verified">已验证</span>':'<span class="badge unverified">未验证</span>'}</td>
                     <td>${roleCell}</td>
                     <td style="font-size:0.8rem;color:var(--dim)">${new Date(u.created_at).toLocaleDateString('zh-CN')}</td>
                     <td><div class="actions">
@@ -366,7 +366,7 @@
 
     // ---- 删除 ----
     window.deleteUser = async function(userId, email){
-        if(!confirm(`⚠️ 永久删除「${email}」？不可撤销！`)) return;
+        if(!confirm(`永久删除「${email}」？不可撤销！`)) return;
         const token = localStorage.getItem('lt_token');
         try{
             const data = await safeFetch(API_BASE+'/admin/delete-user',{
