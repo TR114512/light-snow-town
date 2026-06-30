@@ -33,6 +33,7 @@
         .auth-btn { background:rgba(20,40,65,0.7); backdrop-filter:blur(8px); border:1px solid rgba(59,130,246,0.6); border-radius:60px; padding:10px 20px; display:flex; align-items:center; gap:8px; cursor:pointer; transition:all 0.2s; font-weight:500; color:var(--text-main); min-width:44px; min-height:44px; justify-content:center; font-size:0.9rem; user-select:none; }
         body.theme-light .auth-btn { background:rgba(230,240,255,0.8); border-color:rgba(44,123,229,0.5); color:#1e2f3c; }
         .auth-btn:hover { background:rgba(59,130,246,0.3); transform:scale(1.02); border-color:#3b82f6; box-shadow:0 0 12px rgba(59,130,246,0.5); }
+        #previewModeBtn:hover { background:rgba(245,176,66,0.25) !important; border-color:#f5b042 !important; box-shadow:0 0 12px rgba(245,176,66,0.5) !important; }
         .user-badge { display:flex; align-items:center; gap:8px; }
         .user-badge .avatar-small { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--accent-blue),var(--accent-gold)); display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:700; color:#fff; }
 
@@ -178,7 +179,7 @@
         .theme-switch-group { display:flex; gap:12px; margin-bottom:1.2rem; }
         .theme-mode-btn { background:rgba(59,130,246,0.5); color:var(--text-main); margin-top:0; text-align:center; }
         body.theme-light .theme-mode-btn { color:#1e2f3c; }
-        .theme-mode-btn.active { background:var(--accent-blue); color:white; box-shadow:0 0 8px var(--accent-blue); }
+        .theme-mode-btn.active { background:#5baeff; color:white; box-shadow:0 0 8px #5baeff; }
 
         .dev-modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); z-index:1100; opacity:0; visibility:hidden; transition:opacity 0.25s, visibility 0s 0.25s; display:flex; align-items:center; justify-content:center; }
         .dev-modal-overlay.open { opacity:1; visibility:visible; transition:opacity 0.3s ease, visibility 0s 0s; }
@@ -261,9 +262,13 @@
             <p>迷雾揭开无限的未来 · Mist Unveils Infinite Tomorrows</p>
         </div>
         <div class="action-buttons">
+            <!-- ===== 预览模式按钮 ===== -->
+            <div class="auth-btn" id="previewModeBtn" aria-label="预览模式" role="button" tabindex="0" style="background:rgba(245,176,66,0.12);border-color:rgba(245,176,66,0.5);">
+                <span>预览模式</span>
+            </div>
             <!-- ===== 登录按钮 ===== -->
             <div class="auth-btn" id="authToggleBtn" aria-label="账号" role="button" tabindex="0">
-                <span id="authBtnText">🔑 登录</span>
+                <span id="authBtnText">登录</span>
             </div>
             <div class="dev-btn" id="devBtn" aria-label="开发者信息" role="button" tabindex="0"><span class="dev-icon"></span> <span>开发者</span></div>
             <a href="qa.html" style="text-decoration:none;"><div class="dev-btn" style="background:rgba(245,176,66,0.15);border-color:rgba(245,176,66,0.4);"><span>问答</span></div></a>
@@ -304,12 +309,12 @@
 <!-- 设置抽屉 -->
 <div id="drawerOverlay" class="drawer-overlay"></div>
 <div id="settingsDrawer" class="settings-drawer" role="dialog" aria-label="视觉调校面板">
-    <div class="drawer-header"><span>视觉调校</span><div class="close-drawer" id="closeDrawerBtn">✕</div></div>
+    <div class="drawer-header"><span>视觉调校</span><div class="close-drawer" id="closeDrawerBtn">×</div></div>
     <div style="max-height:90%; overflow-y:auto;">
         <div class="setting-group"><label>界面主题</label><div class="theme-switch-group"><button id="themeDarkBtn" class="theme-mode-btn active">深色模式</button><button id="themeLightBtn" class="theme-mode-btn">浅色模式</button></div></div>
         <div class="setting-group"><label>入场动画</label><div class="theme-switch-group"><button id="animOnBtn" class="theme-mode-btn active">开启</button><button id="animOffBtn" class="theme-mode-btn">关闭</button></div></div>
         <div class="setting-group"><label>加载画面</label><div class="theme-switch-group"><button id="loadOnBtn" class="theme-mode-btn active">显示</button><button id="loadOffBtn" class="theme-mode-btn">跳过</button></div></div>
-        <div class="setting-group"><label>加载画面时长 <span id="loadTimeVal">1.2s</span></label><input type="range" id="loadTime" min="0.1" max="2" step="0.1" value="1.2"></div>
+        <div class="setting-group" id="loadTimeGroup"><label>加载画面时长 <span id="loadTimeVal">1.2s</span></label><input type="range" id="loadTime" min="0.1" max="2" step="0.1" value="1.2"></div>
         <div class="setting-group"><label>动画速度 <span id="animSpeedVal">0.9s</span></label><input type="range" id="animSpeed" min="0.1" max="2" step="0.1" value="0.9"></div>
         <div class="setting-group"><label>背景主色</label><input type="color" id="bgColorPicker" value="#0a2a3f"></div>
         <div class="setting-group"><label>卡片透明度</label><input type="range" id="cardOpacity" min="0.4" max="0.85" step="0.01" value="0.7"></div>
@@ -317,14 +322,13 @@
         <div class="setting-group"><label>动态小球颜色</label><input type="color" id="ballColor" value="#7bc5ff"></div>
         <div class="setting-group"><label>小球滚动速度</label><input type="range" id="ballSpeed" min="0.5" max="2.2" step="0.05" value="1.0"></div>
         <div class="setting-group"><label>背景模糊强度</label><input type="range" id="backdropBlur" min="4" max="20" step="1" value="12"></div>
-        <hr><button id="replayPromoBtn" class="reset-default" style="background:rgba(91,141,239,0.3);color:var(--text-main);margin-bottom:8px">重新观看预览</button>
         <button id="resetSettingsBtn" class="reset-default">重置默认</button>
         <p style="font-size:11px; margin-top:16px; text-align:center;">动态交互 | 实时响应</p>
     </div>
 </div>
 
 <!-- 开发者模态框 -->
-<div id="devModalOverlay" class="dev-modal-overlay"><div class="dev-modal"><div class="dev-modal-header"><h3>灯雪镇 · 开发人员</h3><button class="close-dev-modal" id="closeDevModalBtn">✕</button></div><div class="dev-list"><div class="dev-item"><span class="dev-role">主开发者</span><span class="dev-name">Minecraft -云墨-前端开发</span></div><div class="dev-item"><span class="dev-role">副开发者</span><span class="dev-name">Fish-后端开发</span></div><div class="dev-item"><span class="dev-role">项目总监</span><span class="dev-name">imJack</span></div><div class="dev-item"><span class="dev-role">设计师</span><span class="dev-name">Fish</span></div><div class="dev-item"><span class="dev-role">结构规划</span><span class="dev-name">TPS QMIT</span></div><div class="dev-item"><span class="dev-role">屎上镶金</span><span class="dev-name">我已急哭</span></div><div class="dev-item"><span class="dev-role">特别鸣谢</span><span class="dev-name">Xiao_Zhinecr</span></div></div><div class="dev-note">感谢每一位建设灯雪镇的朋友</div></div></div>
+<div id="devModalOverlay" class="dev-modal-overlay"><div class="dev-modal"><div class="dev-modal-header"><h3>灯雪镇 · 开发人员</h3><button class="close-dev-modal" id="closeDevModalBtn">×</button></div><div class="dev-list"><div class="dev-item"><span class="dev-role">主开发者</span><span class="dev-name">Minecraft -云墨-前端开发</span></div><div class="dev-item"><span class="dev-role">副开发者</span><span class="dev-name">Fish-后端开发</span></div><div class="dev-item"><span class="dev-role">项目总监</span><span class="dev-name">imJack</span></div><div class="dev-item"><span class="dev-role">设计师</span><span class="dev-name">Fish</span></div><div class="dev-item"><span class="dev-role">结构规划</span><span class="dev-name">TPS QMIT</span></div><div class="dev-item"><span class="dev-role">屎上镶金</span><span class="dev-name">我已急哭</span></div><div class="dev-item"><span class="dev-role">特别鸣谢</span><span class="dev-name">Xiao_Zhinecr</span></div></div><div class="dev-note">感谢每一位建设灯雪镇的朋友</div></div></div>
 
 <!-- 隐私政策全屏 -->
 <div class="privacy-fullscreen" id="privacyOverlay">
@@ -366,7 +370,7 @@
 <!-- ===== 登录悬浮模态框 ===== -->
 <div class="login-overlay" id="loginOverlay">
     <div class="login-modal">
-        <button class="close-login" id="closeLoginBtn">✕</button>
+        <button class="close-login" id="closeLoginBtn">×</button>
         <div class="modal-title">灯雪镇</div>
 
         <!-- ====== 登录视图 ====== -->
@@ -429,7 +433,7 @@
                     <div class="captcha-box" id="regCaptchaBoxModal" title="点击刷新"></div>
                 </div>
                 <div class="form-group" id="regCodeGroupModal" style="display:none;">
-                    <label>📧 验证码（注册成功后显示在下方）</label>
+                    <label>验证码（注册成功后显示在下方）</label>
                     <div class="code-row">
                         <input type="text" class="form-control" id="regCodeModal" placeholder="请输入6位验证码" maxlength="6">
                         <button type="button" class="send-code-btn" id="verifyCodeModalBtn">验证</button>
@@ -453,7 +457,7 @@
                     <input type="email" class="form-control" id="forgotEmailModal" placeholder="请输入注册邮箱" required>
                 </div>
                 <p class="form-hint" style="text-align:center; margin-bottom:12px; color:var(--text-dim);">
-                    📧 点击发送后，Supabase 将自动发送重置密码邮件，点击邮件中的链接即可设置新密码
+                    点击发送后，Supabase 将自动发送重置密码邮件，点击邮件中的链接即可设置新密码
                 </p>
                 <button type="submit" class="btn-primary" id="forgotBtnModal">发送重置邮件</button>
             </form>
@@ -464,14 +468,14 @@
 
         <!-- ====== 个人中心视图 ====== -->
         <div id="profileView" class="auth-view" style="display:none;">
-            <div class="modal-sub">👋 欢迎回来，<span id="profileDisplayNameModal">用户</span></div>
+            <div class="modal-sub">欢迎回来，<span id="profileDisplayNameModal">用户</span></div>
             <div class="user-profile">
                 <div class="user-avatar" id="profileAvatarModal">灯</div>
                 <div class="user-email" id="profileEmailModal">user@example.com</div>
                 <div class="user-meta">注册于 <span id="profileJoinDateModal">2025-01-01</span></div>
             </div>
             <div class="user-stats">
-                <div class="stat-item"><div class="stat-num" id="profileStatusModal">✓</div><div class="stat-label">账号状态</div></div>
+                <div class="stat-item"><div class="stat-num" id="profileStatusModal">正常</div><div class="stat-label">账号状态</div></div>
                 <div class="stat-item"><div class="stat-num" id="profileVerifiedModal">已验证</div><div class="stat-label">邮箱验证</div></div>
             </div>
             <div style="margin-top:12px;">
@@ -705,10 +709,6 @@
         }
         bindSetting('bgColorPicker','ui_bgColor'); bindSetting('cardOpacity','ui_cardOpacity',true); bindSetting('accentColor','ui_accentColor'); bindSetting('ballColor','ui_ballColor'); bindSetting('ballSpeed','ui_ballSpeed',true); bindSetting('backdropBlur','ui_backdropBlur',true);
         document.getElementById('resetSettingsBtn').addEventListener('click', () => { localStorage.clear(); location.reload(); });
-        document.getElementById('replayPromoBtn').addEventListener('click', () => {
-            localStorage.removeItem('lt_promo_viewed');
-            location.reload();
-        });
 
         const themeDarkBtn = document.getElementById('themeDarkBtn');
         const themeLightBtn = document.getElementById('themeLightBtn');
@@ -768,15 +768,22 @@
         // 加载画面开关
         const loadOnBtn = document.getElementById('loadOnBtn');
         const loadOffBtn = document.getElementById('loadOffBtn');
+        const loadTimeGroup = document.getElementById('loadTimeGroup');
         function setLoading(on) {
             if(on) {
                 document.body.classList.remove('no-loading');
                 loadOnBtn.classList.add('active'); loadOffBtn.classList.remove('active');
+                if(loadTimeGroup) loadTimeGroup.style.display = '';
                 localStorage.setItem('ui_loading', 'on');
             } else {
-                document.body.classList.add('no-loading');
+                // 跳过 = 加载画面仍然开启，时长0.1秒，隐藏时长调节
+                document.body.classList.remove('no-loading');
                 loadOffBtn.classList.add('active'); loadOnBtn.classList.remove('active');
-                localStorage.setItem('ui_loading', 'off');
+                if(loadTimeGroup) loadTimeGroup.style.display = 'none';
+                localStorage.setItem('ui_loading', 'on');
+                localStorage.setItem('ui_loadTime', '0.1');
+                if(loadTimeSlider) { loadTimeSlider.value = '0.1'; }
+                updateLoadTime('0.1');
             }
         }
         if(showLoading){ loadOnBtn.classList.add('active'); loadOffBtn.classList.remove('active'); }
@@ -791,7 +798,7 @@
                 if(text) { navigator.clipboard.writeText(text); showToast('已复制'); }
                 else { let ipSpan = btn.previousElementSibling; if(ipSpan && ipSpan.innerText) { let raw = ipSpan.innerText.trim(); navigator.clipboard.writeText(raw); showToast('已复制'); } }
                 let original = btn.innerHTML;
-                btn.innerHTML = '✓'; setTimeout(() => { btn.innerHTML = original; }, 800);
+                btn.innerHTML = '已复制'; setTimeout(() => { btn.innerHTML = original; }, 800);
             });
         });
         resizeCanvas(); startAnimation(); applyAllStyles();
@@ -910,6 +917,18 @@
             }
             openLoginModal();
         });
+
+        // 预览模式按钮
+        const previewModeBtn = document.getElementById('previewModeBtn');
+        if(previewModeBtn) {
+            previewModeBtn.addEventListener('click', function(){
+                promoOverlay.style.display = '';
+                promoOverlay.classList.add('open');
+                promoSkipBtn.style.display = 'block';
+                promoFrame.src = promoFrame.src;
+            });
+        }
+
         closeLoginBtn.addEventListener('click', closeLoginModal);
         loginOverlay.addEventListener('click', (e) => {
             if (e.target === loginOverlay) closeLoginModal();
@@ -1171,7 +1190,7 @@
                 authBtnText.innerHTML = `<span class="user-badge"><span class="avatar-small">${(user.email || '?')[0].toUpperCase()}</span> <span>${name}</span></span>`;
                 authToggleBtn.title = '点击管理账号';
             } else {
-                authBtnText.textContent = '🔑 登录';
+                authBtnText.textContent = '登录';
                 authToggleBtn.title = '登录或注册';
             }
         }
